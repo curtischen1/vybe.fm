@@ -215,42 +215,87 @@ function loadAudio(track) {
     // Stop current audio if playing
     if (audioPlayer) {
         audioPlayer.pause();
+        audioPlayer.currentTime = 0;
         audioPlayer = null;
+        console.log('🔄 Stopped previous audio');
     }
     
     // Create new audio player if preview URL exists
-    if (track.previewUrl) {
-        console.log('🎵 Loading audio preview:', track.previewUrl);
-        audioPlayer = new Audio(track.previewUrl);
-        audioPlayer.volume = 0.7; // Set to 70% volume
+    if (track.previewUrl && track.previewUrl !== 'null') {
+        console.log('🎵 Loading audio preview for:', track.name);
+        console.log('🔗 Audio URL:', track.previewUrl);
         
-        // Audio event listeners
+        audioPlayer = new Audio();
+        audioPlayer.crossOrigin = 'anonymous'; // Help with CORS
+        audioPlayer.volume = 0.7; // Set to 70% volume
+        audioPlayer.preload = 'auto';
+        
+        // Audio event listeners with detailed logging
         audioPlayer.addEventListener('loadstart', () => {
-            console.log('🎵 Audio loading started');
+            console.log('📡 Audio loading started...');
+            updateAudioStatus('📡 Loading audio...');
+        });
+        
+        audioPlayer.addEventListener('loadeddata', () => {
+            console.log('📊 Audio data loaded');
+            updateAudioStatus('📊 Audio data loaded');
         });
         
         audioPlayer.addEventListener('canplay', () => {
-            console.log('🎵 Audio ready to play');
+            console.log('✅ Audio ready to play!');
+            updateAudioStatus('✅ Audio ready to play!');
+        });
+        
+        audioPlayer.addEventListener('canplaythrough', () => {
+            console.log('🚀 Audio fully loaded');
+            updateAudioStatus('🚀 Audio fully loaded');
         });
         
         audioPlayer.addEventListener('ended', () => {
-            console.log('🎵 Audio ended, moving to next track');
+            console.log('🏁 Audio ended, moving to next track');
             nextTrack();
         });
         
         audioPlayer.addEventListener('error', (e) => {
-            console.log('❌ Audio error:', e);
-            console.log('No preview available for this track');
+            console.error('❌ Audio error:', e);
+            console.error('❌ Error details:', audioPlayer.error);
+            updateAudioStatus('❌ Audio failed to load');
+            console.log('💡 Trying next track...');
+            // Try next track if this one fails
+            setTimeout(() => nextTrack(), 1000);
         });
+        
+        audioPlayer.addEventListener('progress', () => {
+            console.log('📥 Audio download progress');
+        });
+        
+        // Set the source and load
+        audioPlayer.src = track.previewUrl;
+        audioPlayer.load();
         
         // Auto-play if currently playing
         if (isPlaying) {
-            audioPlayer.play().catch(e => {
-                console.log('Auto-play prevented by browser:', e);
-            });
+            setTimeout(() => {
+                audioPlayer.play().then(() => {
+                    console.log('🎶 Auto-playing:', track.name);
+                }).catch(e => {
+                    console.log('🚫 Auto-play prevented by browser:', e.message);
+                    console.log('💡 Click play button to start audio');
+                });
+            }, 100);
         }
     } else {
-        console.log('No preview URL available for:', track.name);
+        console.log('❌ No preview URL available for:', track.name);
+        console.log('📝 Track data:', track);
+        updateAudioStatus('❌ No audio preview available');
+    }
+}
+
+function updateAudioStatus(message) {
+    const statusElement = document.getElementById('audio-status');
+    if (statusElement) {
+        statusElement.textContent = message;
+        console.log('🔄 Audio Status:', message);
     }
 }
 
@@ -288,17 +333,22 @@ function togglePlayPause() {
         if (isPlaying) {
             audioPlayer.play().then(() => {
                 console.log('🎵 Playing:', currentTracks[currentTrackIndex]?.name);
+                updateAudioStatus('🎵 Playing audio');
             }).catch(e => {
                 console.log('❌ Play failed:', e);
+                updateAudioStatus('❌ Playback failed');
                 isPlaying = false;
                 updatePlayButtonState();
             });
         } else {
             audioPlayer.pause();
             console.log('⏸️ Paused');
+            updateAudioStatus('⏸️ Paused');
         }
     } else {
-        console.log(isPlaying ? '🎵 Playing (no audio)' : '⏸️ Paused');
+        const status = isPlaying ? '🎵 Playing (no audio available)' : '⏸️ Paused';
+        console.log(status);
+        updateAudioStatus(status);
     }
 }
 

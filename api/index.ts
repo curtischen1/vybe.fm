@@ -206,13 +206,16 @@ async function generateMusicRecommendations(context: string, referenceTrackIds: 
 
 // Generate preview URLs for known tracks (in real app, this comes from Spotify API)
 function generatePreviewUrl(trackName: string, artistName: string): string | null {
-  // For demo purposes, we'll use some test audio URLs
-  // In production, these would be actual Spotify 30-second preview URLs
-  const demoAudioUrls = [
-    'https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3',
-    'https://file-examples.com/storage/fe86c86bb95c38d3b5c03e8/2017/11/file_example_MP3_700KB.mp3',
-    'https://sample-audio.netlify.app/audio/mp3/sample1.mp3',
-    'https://sample-audio.netlify.app/audio/mp3/sample2.mp3'
+  // NOTE: As of November 2024, Spotify deprecated the preview_url field!
+  // For demo purposes, we'll use reliable test audio files
+  // In production, you'd need to use Spotify's Web Playback SDK (requires Premium)
+  
+  const workingAudioUrls = [
+    // Using Internet Archive's reliable audio files
+    'https://archive.org/download/testmp3testfile/mpthreetest.mp3',
+    'https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3',
+    'https://codeskulptor-demos.commondatastorage.googleapis.com/descent/background%20music.mp3',
+    'https://codeskulptor-demos.commondatastorage.googleapis.com/pang/paza-moduless.mp3'
   ];
   
   // Use a simple hash to consistently assign the same URL to the same track
@@ -221,11 +224,11 @@ function generatePreviewUrl(trackName: string, artistName: string): string | nul
     return a & a;
   }, 0);
   
-  const urlIndex = Math.abs(trackHash) % demoAudioUrls.length;
+  const urlIndex = Math.abs(trackHash) % workingAudioUrls.length;
   
-  // 80% chance of having a preview URL (some tracks don't have previews)
-  if (Math.abs(trackHash) % 10 < 8) {
-    return demoAudioUrls[urlIndex];
+  // 70% chance of having a preview URL (realistic - not all tracks have previews)
+  if (Math.abs(trackHash) % 10 < 7) {
+    return workingAudioUrls[urlIndex];
   }
   
   return null; // No preview available
