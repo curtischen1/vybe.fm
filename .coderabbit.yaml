@@ -1,0 +1,137 @@
+# CodeRabbit Configuration for Vybe Project
+# This file configures CodeRabbit's AI-powered code review behavior
+
+# Review settings
+reviews:
+  # Enable automatic reviews on pull requests
+  auto_review: true
+  
+  # Review thoroughness level (1-3, where 3 is most thorough)
+  thoroughness: 3
+  
+  # Focus areas for review
+  focus_areas:
+    - "security"           # Security vulnerabilities and best practices
+    - "performance"        # Performance optimizations and bottlenecks  
+    - "maintainability"    # Code structure and readability
+    - "testing"           # Test coverage and quality
+    - "documentation"     # Code documentation and comments
+    - "api_design"        # API design patterns and consistency
+    - "error_handling"    # Error handling and edge cases
+
+# File patterns to include/exclude
+files:
+  # Include these file patterns for review
+  include:
+    - "**/*.ts"           # TypeScript files
+    - "**/*.tsx"          # React TypeScript files  
+    - "**/*.js"           # JavaScript files
+    - "**/*.jsx"          # React JavaScript files
+    - "**/*.sql"          # Database files
+    - "**/*.md"           # Documentation files
+    - "**/package.json"   # Package configuration
+    - "**/tsconfig.json"  # TypeScript config
+    - "**/*.yml"          # YAML configuration
+    - "**/*.yaml"         # YAML configuration
+    
+  # Exclude these patterns from review
+  exclude:
+    - "**/node_modules/**"     # Dependencies
+    - "**/dist/**"             # Build output
+    - "**/build/**"            # Build output
+    - "**/*.min.js"            # Minified files
+    - "**/*.map"               # Source maps
+    - "**/coverage/**"         # Test coverage reports
+    - "**/.git/**"             # Git internal files
+    - "**/logs/**"             # Log files
+    - "**/*.log"               # Individual log files
+    - "**/tmp/**"              # Temporary files
+    - "**/.env*"               # Environment files
+
+# Language-specific settings
+languages:
+  typescript:
+    # Focus on TypeScript best practices
+    strict_mode: true
+    # Check for proper typing
+    type_safety: true
+    
+  javascript:
+    # Modern JS practices
+    es6_plus: true
+    
+  sql:
+    # Database review focus
+    performance: true
+    security: true
+
+# Project-specific rules for Vybe
+project_rules:
+  # Music streaming app specific concerns
+  - name: "api_rate_limiting"
+    description: "Check for proper rate limiting with Spotify API"
+    pattern: "spotify|rate.limit"
+    
+  - name: "ai_cost_optimization" 
+    description: "Review AI API usage for cost optimization"
+    pattern: "openai|claude|ai.api"
+    
+  - name: "user_privacy"
+    description: "Ensure user data privacy compliance"
+    pattern: "user.data|privacy|personal"
+    
+  - name: "audio_processing"
+    description: "Review audio feature processing logic"
+    pattern: "audio.features|valence|energy|tempo"
+
+# Comment settings
+comments:
+  # Style of comments (conversational, technical, brief)
+  style: "technical"
+  
+  # Include suggestions for improvements
+  suggestions: true
+  
+  # Include code examples in suggestions
+  code_examples: true
+  
+  # Priority levels for comments (low, medium, high, critical)
+  min_priority: "medium"
+
+# Integration settings
+integrations:
+  # GitHub-specific settings
+  github:
+    # Auto-request changes for critical issues
+    auto_request_changes: true
+    
+    # Auto-approve for minor changes
+    auto_approve_minor: false
+    
+    # Include summary comments
+    summary_comment: true
+
+# Notification settings  
+notifications:
+  # Notify on review completion
+  review_complete: true
+  
+  # Notify on critical issues found
+  critical_issues: true
+
+# Custom prompts for Vybe-specific concerns
+custom_prompts:
+  security:
+    - "Check for secure handling of Spotify OAuth tokens"
+    - "Verify user data is properly encrypted and stored"
+    - "Ensure API keys are not exposed in code"
+    
+  performance:
+    - "Review database queries for N+1 problems"
+    - "Check caching strategy implementation"
+    - "Verify audio processing is optimized"
+    
+  architecture:
+    - "Ensure recommendation engine follows established patterns"
+    - "Check separation of concerns between services"
+    - "Verify proper error handling throughout the system"
