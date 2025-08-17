@@ -396,11 +396,11 @@ function updateAudioStatus(message) {
 
 function updateCharacterCount() {
     const input = document.getElementById('context-input');
-    const counter = document.getElementById('char-counter');
+    const counter = document.getElementById('char-count');
     
     if (input && counter) {
         const currentLength = input.value.length;
-        const maxLength = input.getAttribute('maxlength') || 500;
+        const maxLength = parseInt(input.getAttribute('maxlength') || '500', 10);
         counter.textContent = `${currentLength}/${maxLength}`;
         
         if (currentLength > maxLength * 0.9) {
