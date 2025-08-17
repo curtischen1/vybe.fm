@@ -92,8 +92,8 @@ class ContextProcessorService {
     const prompt = this.buildContextPrompt(contextText, userHistory);
 
     const response = await this.claude.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 800,
+      model: config.claude.model,
+      max_tokens: config.claude.maxTokens,
       temperature: 0.3, // Lower temperature for more consistent outputs
       messages: [
         {

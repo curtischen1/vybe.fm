@@ -94,7 +94,7 @@ router.post('/callback', authenticateToken, asyncHandler(async (req, res) => {
  * @desc    Refresh user's Spotify access token
  * @access  Private (requires Spotify integration)
  */
-router.post('/refresh-token', requireSpotify, asyncHandler(async (req, res) => {
+router.post('/refresh-token', authenticateToken, requireSpotify, asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const user = req.user;
 
@@ -344,7 +344,7 @@ router.post('/audio-features/batch', asyncHandler(async (req, res) => {
  * @desc    Create a Spotify playlist from Vybe recommendations
  * @access  Private (requires Spotify integration)
  */
-router.post('/playlist/create', requireSpotify, asyncHandler(async (req, res) => {
+router.post('/playlist/create', authenticateToken, requireSpotify, asyncHandler(async (req, res) => {
   const { name, description, trackIds } = req.body;
   const userId = req.user.id;
   const spotifyUserId = req.user.spotifyId;
@@ -407,7 +407,7 @@ router.post('/playlist/create', requireSpotify, asyncHandler(async (req, res) =>
  * @desc    Get user's Spotify profile information
  * @access  Private (requires Spotify integration)
  */
-router.get('/profile', requireSpotify, asyncHandler(async (req, res) => {
+router.get('/profile', authenticateToken, requireSpotify, asyncHandler(async (req, res) => {
   const accessToken = req.user.spotifyAccessToken;
 
   const profile = await spotifyService.getUserProfile(accessToken);

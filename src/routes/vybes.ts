@@ -146,6 +146,46 @@ router.get('/', authenticateToken, asyncHandler(async (req, res) => {
 }));
 
 /**
+ * @route   GET /vybes/stats
+ * @desc    Get user's recommendation statistics
+ * @access  Private
+ */
+router.get('/stats', authenticateToken, asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+
+  const [totalVybes, totalFeedback, recentFeedback] = await Promise.all([
+    db.client.vybe.count({ where: { userId } }),
+    db.client.feedback.count({ where: { userId } }),
+    db.client.feedback.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    }),
+  ]);
+
+  // Calculate recommendation accuracy from individual feedback
+  const positiveCount = recentFeedback.filter(f => f.feedbackType === 'UPVOTE').length;
+  const negativeCount = recentFeedback.filter(f => f.feedbackType === 'DOWNVOTE').length;
+  const totalRated = positiveCount + negativeCount;
+  const accuracy = totalRated > 0 ? positiveCount / totalRated : 0;
+
+  res.json({
+    success: true,
+    data: {
+      totalVybes,
+      totalFeedback,
+      recommendationAccuracy: Math.round(accuracy * 100),
+      recentActivity: {
+        upvotes: positiveCount,
+        downvotes: negativeCount,
+        skips: recentFeedback.filter(f => f.feedbackType === 'SKIP').length,
+      },
+    },
+    timestamp: new Date().toISOString(),
+  });
+}));
+
+/**
  * @route   GET /vybes/:vybeId
  * @desc    Get specific vybe details
  * @access  Private (own vybes only)
@@ -316,46 +356,6 @@ router.get('/:vybeId/feedback', authenticateToken, asyncHandler(async (req, res)
       playTime: f.playTime,
       createdAt: f.createdAt.toISOString(),
     })),
-    timestamp: new Date().toISOString(),
-  });
-}));
-
-/**
- * @route   GET /vybes/stats
- * @desc    Get user's recommendation statistics
- * @access  Private
- */
-router.get('/stats', authenticateToken, asyncHandler(async (req, res) => {
-  const userId = req.user.id;
-
-  const [totalVybes, totalFeedback, recentFeedback] = await Promise.all([
-    db.client.vybe.count({ where: { userId } }),
-    db.client.feedback.count({ where: { userId } }),
-    db.client.feedback.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-      take: 100,
-    }),
-  ]);
-
-  // Calculate recommendation accuracy from individual feedback
-  const positiveCount = recentFeedback.filter(f => f.feedbackType === 'UPVOTE').length;
-  const negativeCount = recentFeedback.filter(f => f.feedbackType === 'DOWNVOTE').length;
-  const totalRated = positiveCount + negativeCount;
-  const accuracy = totalRated > 0 ? positiveCount / totalRated : 0;
-
-  res.json({
-    success: true,
-    data: {
-      totalVybes,
-      totalFeedback,
-      recommendationAccuracy: Math.round(accuracy * 100),
-      recentActivity: {
-        upvotes: positiveCount,
-        downvotes: negativeCount,
-        skips: recentFeedback.filter(f => f.feedbackType === 'SKIP').length,
-      },
-    },
     timestamp: new Date().toISOString(),
   });
 }));
