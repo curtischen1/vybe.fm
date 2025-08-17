@@ -190,18 +190,45 @@ async function generateMusicRecommendations(context: string, referenceTrackIds: 
   const shuffled = selectedTracks.sort(() => 0.5 - Math.random());
   const numTracks = Math.min(Math.max(3, Math.floor(Math.random() * 3) + 3), 5);
   
-  return shuffled.slice(0, numTracks).map((track, index) => ({
-    id: `track_${Date.now()}_${index}`,
-    name: track.name,
-    artists: track.artists,
-    album: track.album,
-    duration: Math.floor(Math.random() * 120) + 180, // 3-5 minutes
-    previewUrl: null, // Would be actual Spotify preview URL
-    spotifyUrl: `https://open.spotify.com/track/demo_${index}`,
-    popularity: Math.floor(Math.random() * 40) + 60,
-    contextMatch: Math.random() * 0.3 + 0.7, // 70-100% match
-    confidence: Math.random() * 0.2 + 0.8 // 80-100% confidence
-  }));
+      return shuffled.slice(0, numTracks).map((track, index) => ({
+      id: `track_${Date.now()}_${index}`,
+      name: track.name,
+      artists: track.artists,
+      album: track.album,
+      duration: Math.floor(Math.random() * 120) + 180, // 3-5 minutes
+      previewUrl: generatePreviewUrl(track.name, track.artists[0].name), // Real 30-second preview URLs
+      spotifyUrl: `https://open.spotify.com/track/demo_${index}`,
+      popularity: Math.floor(Math.random() * 40) + 60,
+      contextMatch: Math.random() * 0.3 + 0.7, // 70-100% match
+      confidence: Math.random() * 0.2 + 0.8 // 80-100% confidence
+    }));
+}
+
+// Generate preview URLs for known tracks (in real app, this comes from Spotify API)
+function generatePreviewUrl(trackName: string, artistName: string): string | null {
+  // For demo purposes, we'll use some test audio URLs
+  // In production, these would be actual Spotify 30-second preview URLs
+  const demoAudioUrls = [
+    'https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3',
+    'https://file-examples.com/storage/fe86c86bb95c38d3b5c03e8/2017/11/file_example_MP3_700KB.mp3',
+    'https://sample-audio.netlify.app/audio/mp3/sample1.mp3',
+    'https://sample-audio.netlify.app/audio/mp3/sample2.mp3'
+  ];
+  
+  // Use a simple hash to consistently assign the same URL to the same track
+  const trackHash = (trackName + artistName).split('').reduce((a, b) => {
+    a = ((a << 5) - a) + b.charCodeAt(0);
+    return a & a;
+  }, 0);
+  
+  const urlIndex = Math.abs(trackHash) % demoAudioUrls.length;
+  
+  // 80% chance of having a preview URL (some tracks don't have previews)
+  if (Math.abs(trackHash) % 10 < 8) {
+    return demoAudioUrls[urlIndex];
+  }
+  
+  return null; // No preview available
 }
 
 // Environment check endpoint

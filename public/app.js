@@ -6,6 +6,7 @@ let currentVybe = null;
 let currentTrackIndex = 0;
 let isPlaying = false;
 let currentTracks = [];
+let audioPlayer = null;
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
@@ -202,9 +203,55 @@ function updatePlayerUI() {
         if (currentTrack.album?.images && currentTrack.album.images.length > 0) {
             document.getElementById('album-cover').src = currentTrack.album.images[0].url;
         }
+        
+        // Load audio if preview URL is available
+        loadAudio(currentTrack);
     }
     
     updatePlayButtonState();
+}
+
+function loadAudio(track) {
+    // Stop current audio if playing
+    if (audioPlayer) {
+        audioPlayer.pause();
+        audioPlayer = null;
+    }
+    
+    // Create new audio player if preview URL exists
+    if (track.previewUrl) {
+        console.log('🎵 Loading audio preview:', track.previewUrl);
+        audioPlayer = new Audio(track.previewUrl);
+        audioPlayer.volume = 0.7; // Set to 70% volume
+        
+        // Audio event listeners
+        audioPlayer.addEventListener('loadstart', () => {
+            console.log('🎵 Audio loading started');
+        });
+        
+        audioPlayer.addEventListener('canplay', () => {
+            console.log('🎵 Audio ready to play');
+        });
+        
+        audioPlayer.addEventListener('ended', () => {
+            console.log('🎵 Audio ended, moving to next track');
+            nextTrack();
+        });
+        
+        audioPlayer.addEventListener('error', (e) => {
+            console.log('❌ Audio error:', e);
+            console.log('No preview available for this track');
+        });
+        
+        // Auto-play if currently playing
+        if (isPlaying) {
+            audioPlayer.play().catch(e => {
+                console.log('Auto-play prevented by browser:', e);
+            });
+        }
+    } else {
+        console.log('No preview URL available for:', track.name);
+    }
 }
 
 function populateQueue() {
@@ -236,8 +283,23 @@ function togglePlayPause() {
     isPlaying = !isPlaying;
     updatePlayButtonState();
     
-    // In a real implementation, this would control actual audio playback
-    console.log(isPlaying ? 'Playing' : 'Paused');
+    // Control actual audio playback
+    if (audioPlayer) {
+        if (isPlaying) {
+            audioPlayer.play().then(() => {
+                console.log('🎵 Playing:', currentTracks[currentTrackIndex]?.name);
+            }).catch(e => {
+                console.log('❌ Play failed:', e);
+                isPlaying = false;
+                updatePlayButtonState();
+            });
+        } else {
+            audioPlayer.pause();
+            console.log('⏸️ Paused');
+        }
+    } else {
+        console.log(isPlaying ? '🎵 Playing (no audio)' : '⏸️ Paused');
+    }
 }
 
 function updatePlayButtonState() {
@@ -250,7 +312,7 @@ function previousTrack() {
         currentTrackIndex--;
         updatePlayerUI();
         populateQueue();
-        console.log('Previous track:', currentTracks[currentTrackIndex]);
+        console.log('⏮️ Previous track:', currentTracks[currentTrackIndex]?.name);
     }
 }
 
@@ -259,10 +321,15 @@ function nextTrack() {
         currentTrackIndex++;
         updatePlayerUI();
         populateQueue();
-        console.log('Next track:', currentTracks[currentTrackIndex]);
+        console.log('⏭️ Next track:', currentTracks[currentTrackIndex]?.name);
     } else {
-        // End of playlist - could fetch more recommendations here
-        console.log('End of playlist');
+        // End of playlist - stop playing
+        isPlaying = false;
+        updatePlayButtonState();
+        if (audioPlayer) {
+            audioPlayer.pause();
+        }
+        console.log('🏁 End of playlist');
     }
 }
 
