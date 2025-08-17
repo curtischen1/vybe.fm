@@ -1,0 +1,178 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model - core user information
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Spotify integration
+  spotifyId           String? @unique
+  spotifyAccessToken  String?
+  spotifyRefreshToken String?
+  spotifyExpiresAt    DateTime?
+
+  // User preferences and stats
+  preferences UserPreferences?
+  stats       UserStats?
+
+  // Relationships
+  vybes    Vybe[]
+  feedback Feedback[]
+
+  @@map("users")
+}
+
+// User preferences - learning from user behavior
+model UserPreferences {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // JSON fields for flexible preference storage
+  contextPreferences    Json @default("{}")  // Context-specific preferences
+  overallPreferences    Json @default("{}")  // General music preferences
+  audioFeatureTendencies Json @default("{}")  // Learned audio feature preferences
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_preferences")
+}
+
+// User statistics - tracking user activity
+model UserStats {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  totalVybes                  Int   @default(0)
+  totalFeedback               Int   @default(0)
+  avgRecommendationAccuracy   Float @default(0.0)
+  favoriteContexts            Json  @default("[]")  // Array of popular contexts
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_stats")
+}
+
+// Vybe model - each music discovery session
+model Vybe {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Core vybe data
+  contextRaw         String           // Original user input
+  contextParsed      Json             // AI-processed context weights
+  referenceTrackIds  Json             // Array of Spotify track IDs
+  recommendations    Json             // Array of recommended tracks with metadata
+  
+  // Processing metadata
+  processingTimeMs   Int?             // Time taken to generate recommendations
+  aiCostCents        Int?             // Cost of AI processing in cents
+  
+  createdAt DateTime @default(now())
+
+  // Relationships
+  feedback Feedback[]
+
+  @@map("vybes")
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// Feedback model - user responses to recommendations
+model Feedback {
+  id      String      @id @default(cuid())
+  vybeId  String
+  vybe    Vybe        @relation(fields: [vybeId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Feedback data
+  trackId      String          // Spotify track ID
+  feedbackType FeedbackType    // upvote, downvote, skip
+  playTime     Int?            // Seconds user listened (if available)
+  
+  createdAt DateTime @default(now())
+
+  @@map("feedback")
+  @@index([vybeId])
+  @@index([userId])
+  @@index([trackId])
+}
+
+// Cached track data - avoid repeated Spotify API calls
+model TrackCache {
+  id          String   @id // Spotify track ID
+  name        String
+  artists     Json     // Array of artist objects
+  album       Json     // Album object
+  duration    Int      // Duration in seconds
+  previewUrl  String?
+  spotifyUrl  String
+  popularity  Int      @default(0)
+  
+  // Audio features for recommendation engine
+  audioFeatures Json   // Spotify audio features object
+  
+  // Cache metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("track_cache")
+  @@index([popularity])
+  @@index([updatedAt])
+}
+
+// Context cache - avoid repeated AI processing
+model ContextCache {
+  id            String   @id @default(cuid())
+  contextHash   String   @unique // Hash of the context string
+  contextRaw    String   // Original context
+  contextParsed Json     // AI-processed weights
+  hitCount      Int      @default(1) // How many times this context was used
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("context_cache")
+  @@index([contextHash])
+  @@index([hitCount])
+}
+
+// System analytics - track app performance and usage
+model Analytics {
+  id        String   @id @default(cuid())
+  event     String   // Event name
+  data      Json     // Event data
+  userId    String?  // Optional user ID
+  sessionId String?  // Optional session ID
+  
+  createdAt DateTime @default(now())
+
+  @@map("analytics")
+  @@index([event])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// Enums
+enum FeedbackType {
+  UPVOTE
+  DOWNVOTE
+  SKIP
+}
