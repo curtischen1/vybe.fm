@@ -66,8 +66,7 @@ export interface TrackRecommendation {
   album: string;
   previewUrl: string | null;
   spotifyUrl: string;
-  youtubeId?: string;      // YouTube video ID
-  streamUrl?: string;      // YouTube stream URL
+  spotifyUri: string;      // Spotify URI for Web Playback SDK (e.g., "spotify:track:4iV5W9uYEdYUVa79Axb7Rh")
   audioFeatures: SpotifyAudioFeatures;
   confidence: number;     // 0 to 1
   reasoning?: string;
@@ -219,8 +218,7 @@ export interface SpotifyTrack {
   duration: number;
   previewUrl?: string | undefined;
   spotifyUrl: string;
-  youtubeId?: string;      // YouTube video ID for streaming
-  streamUrl?: string;      // YouTube stream URL
+  spotifyUri: string;      // Spotify URI for Web Playback SDK
   popularity: number;
 }
 
@@ -286,36 +284,4 @@ export interface InsightRecommendations {
   genreRecommendations: string[];
 }
 
-// YouTube Music API types
-export interface YouTubeMusicSearchRequest {
-  artist: string;
-  title: string;
-  limit?: number;
-}
 
-export interface YouTubeMusicSearchResponse {
-  tracks: YouTubeTrack[];
-  total: number;
-}
-
-export interface YouTubeTrack {
-  id: string;
-  title: string;
-  artist: string;
-  duration: number;
-  thumbnail: string;
-  videoId: string;
-  streamUrl?: string;
-  quality?: string;
-}
-
-export interface YouTubeStreamRequest {
-  videoId: string;
-}
-
-export interface YouTubeStreamResponse {
-  streamUrl: string;
-  quality: string;
-  format: string;
-  expiresAt: string;
-}

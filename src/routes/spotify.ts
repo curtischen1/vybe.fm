@@ -183,6 +183,7 @@ router.get('/search/tracks', optionalAuth, asyncHandler(async (req, res): Promis
       duration: Math.floor(track.duration_ms / 1000),
       previewUrl: track.preview_url || undefined,
       spotifyUrl: track.external_urls.spotify,
+      spotifyUri: `spotify:track:${track.id}`,
       popularity: track.popularity,
     })),
     total: searchResults.tracks.total,
