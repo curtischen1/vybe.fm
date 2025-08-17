@@ -37,25 +37,25 @@
                         <div class="track-inputs">
                             <div class="track-input">
                                 <input type="text" placeholder="Artist - Song Title" id="ref-track-1">
-                                <button class="remove-track" onclick="clearTrack(1)">×</button>
+                                <button class="remove-track" data-track="1">×</button>
                             </div>
                             <div class="track-input">
                                 <input type="text" placeholder="Artist - Song Title" id="ref-track-2">
-                                <button class="remove-track" onclick="clearTrack(2)">×</button>
+                                <button class="remove-track" data-track="2">×</button>
                             </div>
                             <div class="track-input">
                                 <input type="text" placeholder="Artist - Song Title" id="ref-track-3">
-                                <button class="remove-track" onclick="clearTrack(3)">×</button>
+                                <button class="remove-track" data-track="3">×</button>
                             </div>
                         </div>
                     </div>
                     
-                    <button id="create-vybe-btn" class="primary-btn" onclick="createVybe()">
+                    <button id="create-vybe-btn" class="primary-btn">
                         Create Vybe
                     </button>
                     
                     <!-- Debug test button -->
-                    <button onclick="alert('JavaScript is working! Check console for logs.')" 
+                    <button id="test-js-btn" 
                             style="margin-top: 10px; padding: 5px 10px; background: #ddd; border: none; border-radius: 5px; cursor: pointer;">
                         🧪 Test JS
                     </button>
@@ -67,7 +67,7 @@
         <div id="player-page" class="page">
             <div class="container">
                 <div class="player-header">
-                    <button class="back-btn" onclick="goBack()">← Back</button>
+                    <button id="back-btn" class="back-btn">← Back</button>
                     <div class="vybe-context">
                         <h3 id="current-context">Your Vybe</h3>
                     </div>
@@ -85,18 +85,18 @@
                     
                     <div class="player-controls">
                         <div class="feedback-controls">
-                            <button id="dislike-btn" class="feedback-btn dislike" onclick="giveFeedback('dislike')">
+                            <button id="dislike-btn" class="feedback-btn dislike" data-feedback="dislike">
                                 👎 Dislike
                             </button>
-                            <button id="like-btn" class="feedback-btn like" onclick="giveFeedback('like')">
+                            <button id="like-btn" class="feedback-btn like" data-feedback="like">
                                 👍 Like
                             </button>
                         </div>
                         
                         <div class="playback-controls">
-                            <button class="control-btn" onclick="previousTrack()">⏮</button>
-                            <button id="play-pause-btn" class="control-btn play-btn" onclick="togglePlayPause()">▶️</button>
-                            <button class="control-btn" onclick="nextTrack()">⏭</button>
+                            <button id="prev-btn" class="control-btn">⏮</button>
+                            <button id="play-pause-btn" class="control-btn play-btn">▶️</button>
+                            <button id="next-btn" class="control-btn">⏭</button>
                         </div>
                         
                         <div class="progress-bar">

@@ -6,8 +6,19 @@ import path from 'path';
 
 const app = express();
 
-// Security middleware
-app.use(helmet());
+// Security middleware with relaxed CSP for frontend
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https:"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrcAttr: ["'unsafe-inline'"], // Allow inline event handlers
+      imgSrc: ["'self'", "data:", "https:", "http:"], // Allow external images
+      connectSrc: ["'self'", "https:"]
+    }
+  }
+}));
 app.use(cors());
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));

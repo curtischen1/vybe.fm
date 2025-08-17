@@ -25,6 +25,52 @@ function setupEventListeners() {
             createVybe();
         }
     });
+    
+    // Create Vybe button
+    const createVybeBtn = document.getElementById('create-vybe-btn');
+    createVybeBtn.addEventListener('click', createVybe);
+    
+    // Test JS button
+    const testJsBtn = document.getElementById('test-js-btn');
+    testJsBtn.addEventListener('click', function() {
+        console.log('🧪 Test JS button clicked!');
+        alert('JavaScript is working! Check console for logs.');
+    });
+    
+    // Remove track buttons
+    document.querySelectorAll('.remove-track').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const trackNumber = this.getAttribute('data-track');
+            clearTrack(trackNumber);
+        });
+    });
+    
+    // Player controls
+    const prevBtn = document.getElementById('prev-btn');
+    const playPauseBtn = document.getElementById('play-pause-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const backBtn = document.getElementById('back-btn');
+    
+    if (prevBtn) prevBtn.addEventListener('click', previousTrack);
+    if (playPauseBtn) playPauseBtn.addEventListener('click', togglePlayPause);
+    if (nextBtn) nextBtn.addEventListener('click', nextTrack);
+    if (backBtn) backBtn.addEventListener('click', goBack);
+    
+    // Feedback buttons
+    const likeBtn = document.getElementById('like-btn');
+    const dislikeBtn = document.getElementById('dislike-btn');
+    
+    if (likeBtn) {
+        likeBtn.addEventListener('click', function() {
+            giveFeedback('like');
+        });
+    }
+    
+    if (dislikeBtn) {
+        dislikeBtn.addEventListener('click', function() {
+            giveFeedback('dislike');
+        });
+    }
 }
 
 function updateCharCount() {
