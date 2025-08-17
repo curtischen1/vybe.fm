@@ -43,8 +43,12 @@ function clearTrack(trackNumber) {
 }
 
 async function createVybe() {
+    console.log('🎵 Create Vybe button clicked!');
+    
     const contextInput = document.getElementById('context-input');
     const context = contextInput.value.trim();
+    
+    console.log('Context input:', context);
     
     if (!context || context.length < 5) {
         alert('Please describe your vybe (at least 5 characters)');
@@ -60,8 +64,21 @@ async function createVybe() {
         }
     }
     
-    // Show loading
+    console.log('Reference tracks:', referenceTrackIds);
+    
+    // Disable button and show loading
+    const createBtn = document.getElementById('create-vybe-btn');
+    createBtn.disabled = true;
+    createBtn.textContent = 'Creating Vybe...';
     showLoading(true);
+    
+    const requestData = {
+        context: context,
+        referenceTrackIds: referenceTrackIds
+    };
+    
+    console.log('Sending request to:', `${API_BASE}/api/v1/vybes`);
+    console.log('Request data:', requestData);
     
     try {
         const response = await fetch(`${API_BASE}/api/v1/vybes`, {
@@ -69,31 +86,39 @@ async function createVybe() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                context: context,
-                referenceTrackIds: referenceTrackIds
-            })
+            body: JSON.stringify(requestData)
         });
         
+        console.log('Response status:', response.status);
+        console.log('Response headers:', [...response.headers.entries()]);
+        
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const errorText = await response.text();
+            console.error('Response error text:', errorText);
+            throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
         }
         
         const vybeData = await response.json();
-        console.log('Vybe created:', vybeData);
+        console.log('✅ Vybe created successfully:', vybeData);
         
         // Store current vybe
         currentVybe = vybeData;
         currentTracks = vybeData.recommendations || [];
         currentTrackIndex = 0;
         
+        console.log('Stored tracks:', currentTracks);
+        
         // Navigate to player
         showPlayerPage();
         
     } catch (error) {
-        console.error('Error creating vybe:', error);
-        alert('Sorry, there was an error creating your vybe. Please try again.');
+        console.error('❌ Error creating vybe:', error);
+        alert(`Sorry, there was an error creating your vybe: ${error.message}\n\nPlease check the browser console for more details.`);
     } finally {
+        // Re-enable button and reset text
+        const createBtn = document.getElementById('create-vybe-btn');
+        createBtn.disabled = false;
+        createBtn.textContent = 'Create Vybe';
         showLoading(false);
     }
 }
