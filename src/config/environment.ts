@@ -29,6 +29,9 @@ const envSchema = z.object({
   CLAUDE_MODEL: z.string().default('claude-3-5-sonnet-20241022'),
   CLAUDE_MAX_TOKENS: z.string().transform(Number).default('800'),
   
+  // YouTube API
+  YOUTUBE_API_KEY: z.string(),
+  
   // Rate Limiting
   RATE_LIMIT_WINDOW_MS: z.string().transform(Number).default('900000'),
   RATE_LIMIT_MAX_REQUESTS: z.string().transform(Number).default('100'),
@@ -97,6 +100,11 @@ export const config = {
     timeout: env.CLAUDE_API_TIMEOUT,
   },
   
+  // YouTube
+  youtube: {
+    apiKey: env.YOUTUBE_API_KEY,
+  },
+  
   // Rate Limiting
   rateLimitWindowMs: env.RATE_LIMIT_WINDOW_MS,
   rateLimitMaxRequests: env.RATE_LIMIT_MAX_REQUESTS,
@@ -129,6 +137,7 @@ export function validateConfig(): void {
     { name: 'JWT_SECRET', value: config.jwtSecret },
     { name: 'SPOTIFY_CLIENT_ID', value: config.spotify.clientId },
     { name: 'CLAUDE_API_KEY', value: config.claude.apiKey },
+    { name: 'YOUTUBE_API_KEY', value: config.youtube.apiKey },
   ];
 
   const missing = requiredConfigs.filter(({ value }) => !value);
