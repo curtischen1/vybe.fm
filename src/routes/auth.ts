@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { asyncHandler } from '@/middleware/errorHandler';
+import { authenticateToken } from '@/middleware/auth';
+import { authService } from '@/services/auth';
 import { logUserActivity } from '@/utils/logger';
 import { 
   RegisterRequest, 
@@ -18,45 +20,22 @@ const router = Router();
 router.post('/register', asyncHandler(async (req, res) => {
   const { email, password, spotifyCode }: RegisterRequest = req.body;
 
-  // TODO: Implement user registration logic
-  // - Validate email and password
-  // - Hash password
-  // - Create user in database
-  // - Handle Spotify OAuth if code provided
-  // - Generate JWT tokens
+  // Register user with auth service
+  const result = await authService.register(email, password);
 
-  logUserActivity('new_user', 'registration_attempt', { email });
-
-  // Placeholder response
-  const response: AuthResponse = {
-    user: {
-      id: 'user_123',
-      email,
-      createdAt: new Date().toISOString(),
-      preferences: {
-        contextPreferences: {},
-        overallPreferences: {
-          favoriteArtists: [],
-          preferredGenres: [],
-          audioFeatureTendencies: {},
-        },
-      },
-      stats: {
-        totalVybes: 0,
-        totalFeedback: 0,
-        avgRecommendationAccuracy: 0,
-        favoriteContexts: [],
-        joinedAt: new Date().toISOString(),
-      },
-    },
-    accessToken: 'placeholder_access_token',
-    refreshToken: 'placeholder_refresh_token',
-    expiresIn: 3600,
-  };
+  // TODO: Handle Spotify OAuth if code provided
+  // if (spotifyCode) {
+  //   // Exchange code for tokens and link account
+  // }
 
   res.status(201).json({
     success: true,
-    data: response,
+    data: {
+      user: result.user,
+      accessToken: result.tokens.accessToken,
+      refreshToken: result.tokens.refreshToken,
+      expiresIn: result.tokens.expiresIn,
+    },
     message: 'User registered successfully',
     timestamp: new Date().toISOString(),
   });
@@ -70,47 +49,17 @@ router.post('/register', asyncHandler(async (req, res) => {
 router.post('/login', asyncHandler(async (req, res) => {
   const { email, password }: LoginRequest = req.body;
 
-  // TODO: Implement user login logic
-  // - Validate email and password
-  // - Verify user credentials
-  // - Generate JWT tokens
-  // - Update last login timestamp
-
-  logUserActivity('existing_user', 'login_attempt', { email });
-
-  // Placeholder response
-  const response: AuthResponse = {
-    user: {
-      id: 'user_123',
-      email,
-      createdAt: '2024-01-01T00:00:00Z',
-      preferences: {
-        contextPreferences: {},
-        overallPreferences: {
-          favoriteArtists: ['Arctic Monkeys', 'The Strokes'],
-          preferredGenres: ['indie rock', 'alternative'],
-          audioFeatureTendencies: {
-            energy: 0.7,
-            valence: 0.6,
-          },
-        },
-      },
-      stats: {
-        totalVybes: 15,
-        totalFeedback: 45,
-        avgRecommendationAccuracy: 0.73,
-        favoriteContexts: ['workout', 'driving'],
-        joinedAt: '2024-01-01T00:00:00Z',
-      },
-    },
-    accessToken: 'placeholder_access_token',
-    refreshToken: 'placeholder_refresh_token',
-    expiresIn: 3600,
-  };
+  // Authenticate user with auth service
+  const result = await authService.login(email, password);
 
   res.json({
     success: true,
-    data: response,
+    data: {
+      user: result.user,
+      accessToken: result.tokens.accessToken,
+      refreshToken: result.tokens.refreshToken,
+      expiresIn: result.tokens.expiresIn,
+    },
     message: 'Login successful',
     timestamp: new Date().toISOString(),
   });
@@ -147,17 +96,20 @@ router.post('/spotify/callback', asyncHandler(async (req, res) => {
 router.post('/refresh', asyncHandler(async (req, res) => {
   const { refreshToken } = req.body;
 
-  // TODO: Implement token refresh logic
-  // - Validate refresh token
-  // - Generate new access token
-  // - Optionally rotate refresh token
+  if (!refreshToken) {
+    return res.status(400).json({
+      success: false,
+      error: 'Refresh token required',
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  // Refresh token with auth service
+  const tokens = await authService.refreshAccessToken(refreshToken);
 
   res.json({
     success: true,
-    data: {
-      accessToken: 'new_access_token',
-      expiresIn: 3600,
-    },
+    data: tokens,
     message: 'Token refreshed successfully',
     timestamp: new Date().toISOString(),
   });
@@ -168,14 +120,11 @@ router.post('/refresh', asyncHandler(async (req, res) => {
  * @desc    Logout user and invalidate tokens
  * @access  Private
  */
-router.post('/logout', asyncHandler(async (req, res) => {
-  // TODO: Implement logout logic
-  // - Invalidate refresh token
-  // - Add access token to blacklist
-  // - Clear any session data
-
-  const userId = (req as any).user?.id;
-  logUserActivity(userId, 'logout', {});
+router.post('/logout', authenticateToken, asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  
+  // Logout user with auth service
+  await authService.logout(userId);
 
   res.json({
     success: true,
