@@ -3,6 +3,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import path from 'path';
+import { GetListByKeyword } from 'youtube-search-api';
+import playdl from 'play-dl';
 
 const app = express();
 
@@ -98,8 +100,8 @@ app.post('/api/v1/vybes', async (req, res) => {
   }
   
   try {
-    // Generate realistic music recommendations based on context
-    const recommendations = await generateMusicRecommendations(context, referenceTrackIds);
+    // Generate realistic music recommendations with YouTube streams
+    const recommendations = await generateMusicRecommendationsWithYoutube(context, referenceTrackIds);
     
     res.json({
       id: `vybe_${Date.now()}`,
@@ -117,6 +119,67 @@ app.post('/api/v1/vybes', async (req, res) => {
     });
   }
 });
+
+// Function to generate realistic music recommendations with YouTube streams
+async function generateMusicRecommendationsWithYoutube(context: string, referenceTrackIds: string[] = []) {
+  try {
+    // Generate base recommendations
+    const baseRecommendations = await generateMusicRecommendations(context, referenceTrackIds);
+    
+    // Add YouTube stream URLs
+    const recommendationsWithStreams = [];
+    
+    for (const track of baseRecommendations) {
+      try {
+        const artist = track.artists.map((a: any) => a.name).join(' ');
+        const query = `${artist} ${track.name}`;
+        
+        console.log(`🔍 Searching YouTube for: ${query}`);
+        
+        // Search YouTube for the track
+        const searchResults = await GetListByKeyword(query, false, 3);
+        
+        if (searchResults.items && searchResults.items.length > 0) {
+          const video = searchResults.items[0];
+          
+          // Only use videos that are likely music (under 10 minutes)
+          const duration = parseDuration(video.length?.simpleText || '0:00');
+          
+          if (duration > 0 && duration <= 600) {
+            console.log(`✅ Found YouTube video: ${video.title} (${video.id})`);
+            
+            recommendationsWithStreams.push({
+              ...track,
+              youtubeId: video.id,
+              streamUrl: `https://www.youtube.com/watch?v=${video.id}`,
+              thumbnail: video.thumbnail?.url || null
+            });
+          } else {
+            console.log(`❌ Video too long or invalid: ${video.title}`);
+            recommendationsWithStreams.push(track);
+          }
+        } else {
+          console.log(`❌ No YouTube results for: ${query}`);
+          recommendationsWithStreams.push(track);
+        }
+        
+        // Small delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+      } catch (error) {
+        console.error(`Error searching YouTube for ${track.name}:`, error);
+        recommendationsWithStreams.push(track);
+      }
+    }
+    
+    return recommendationsWithStreams;
+    
+  } catch (error) {
+    console.error('Error generating recommendations with YouTube:', error);
+    // Fallback to base recommendations without streams
+    return generateMusicRecommendations(context, referenceTrackIds);
+  }
+}
 
 // Function to generate realistic music recommendations
 async function generateMusicRecommendations(context: string, referenceTrackIds: string[] = []) {
@@ -233,6 +296,35 @@ function generatePreviewUrl(trackName: string, artistName: string): string | nul
   }
   
   return null; // No preview available
+}
+
+// Helper function to parse YouTube duration format to seconds
+function parseDuration(duration: string): number {
+  try {
+    // Handle formats like "4:33", "1:04:33", "PT4M33S"
+    if (duration.startsWith('PT')) {
+      // ISO 8601 duration format (PT4M33S)
+      const matches = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+      if (matches) {
+        const hours = parseInt(matches[1] || '0');
+        const minutes = parseInt(matches[2] || '0');
+        const seconds = parseInt(matches[3] || '0');
+        return hours * 3600 + minutes * 60 + seconds;
+      }
+    } else {
+      // Simple format (4:33 or 1:04:33)
+      const parts = duration.split(':').map(p => parseInt(p) || 0);
+      if (parts.length === 2) {
+        return parts[0] * 60 + parts[1]; // mm:ss
+      } else if (parts.length === 3) {
+        return parts[0] * 3600 + parts[1] * 60 + parts[2]; // hh:mm:ss
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to parse duration:', duration, error);
+  }
+  
+  return 0;
 }
 
 // Environment check endpoint

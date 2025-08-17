@@ -10,6 +10,7 @@ import { authRoutes } from '@/routes/auth';
 import { vybeRoutes } from '@/routes/vybes';
 import { userRoutes } from '@/routes/users';
 import { spotifyRoutes } from '@/routes/spotify';
+import youtubeRoutes from '@/routes/youtube';
 
 class VybeServer {
   private app: express.Application;
@@ -84,6 +85,7 @@ class VybeServer {
     this.app.use(`/api/${config.apiVersion}/vybes`, vybeRoutes);
     this.app.use(`/api/${config.apiVersion}/users`, userRoutes);
     this.app.use(`/api/${config.apiVersion}/spotify`, spotifyRoutes);
+    this.app.use(`/api/${config.apiVersion}/youtube`, youtubeRoutes);
 
     // 404 handler
     this.app.use('*', (req, res) => {

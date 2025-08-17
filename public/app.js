@@ -220,8 +220,21 @@ function loadAudio(track) {
         console.log('🔄 Stopped previous audio');
     }
     
-    // Create new audio player if preview URL exists
-    if (track.previewUrl && track.previewUrl !== 'null') {
+    // Check if we have a YouTube stream URL
+    if (track.streamUrl && track.streamUrl.includes('youtube.com')) {
+        console.log('🎵 Loading YouTube audio for:', track.name);
+        console.log('🔗 YouTube URL:', track.streamUrl);
+        console.log('🆔 YouTube ID:', track.youtubeId);
+        
+        // For now, we'll note that YouTube is available but can't play directly
+        // In production, you'd use YouTube Player API or extract audio stream
+        updateAudioStatus('🎵 YouTube stream available (demo mode)');
+        console.log('🎵 YouTube stream detected - would use YouTube Player API in production');
+        
+        // Create a mock audio player for demo purposes
+        audioPlayer = createMockYouTubePlayer(track);
+        
+    } else if (track.previewUrl && track.previewUrl !== 'null') {
         console.log('🎵 Loading audio preview for:', track.name);
         console.log('🔗 Audio URL:', track.previewUrl);
         
@@ -474,3 +487,51 @@ document.addEventListener('DOMContentLoaded', function() {
     
     observer.observe(document.getElementById('player-page'), { attributes: true });
 });
+
+// Mock YouTube player for demo purposes
+function createMockYouTubePlayer(track) {
+    console.log('🎭 Creating mock YouTube player for:', track.name);
+    
+    // Create a mock audio object that simulates YouTube playback
+    const mockPlayer = {
+        paused: true,
+        currentTime: 0,
+        duration: 240, // 4 minutes mock duration
+        volume: 0.7,
+        
+        play: function() {
+            return new Promise((resolve) => {
+                console.log('▶️ Mock YouTube player: Playing', track.name);
+                this.paused = false;
+                updateAudioStatus(`🎵 Playing "${track.name}" from YouTube`);
+                resolve();
+            });
+        },
+        
+        pause: function() {
+            console.log('⏸️ Mock YouTube player: Paused');
+            this.paused = true;
+            updateAudioStatus('⏸️ YouTube playback paused');
+        },
+        
+        addEventListener: function(event, callback) {
+            console.log(`🎧 Mock YouTube player: Added listener for ${event}`);
+            
+            // Simulate some events
+            if (event === 'canplay') {
+                setTimeout(() => {
+                    console.log('✅ Mock YouTube player: Can play');
+                    callback();
+                }, 500);
+            } else if (event === 'ended') {
+                // Simulate track ending after 30 seconds in demo
+                setTimeout(() => {
+                    console.log('🏁 Mock YouTube player: Track ended');
+                    callback();
+                }, 30000);
+            }
+        }
+    };
+    
+    return mockPlayer;
+}
