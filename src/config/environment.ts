@@ -24,10 +24,10 @@ const envSchema = z.object({
   SPOTIFY_CLIENT_SECRET: z.string(),
   SPOTIFY_REDIRECT_URI: z.string().url(),
   
-  // OpenAI API  
-  OPENAI_API_KEY: z.string(),
-  OPENAI_MODEL: z.string().default('gpt-4'),
-  OPENAI_MAX_TOKENS: z.string().transform(Number).default('500'),
+  // Claude API (replacing OpenAI)
+  CLAUDE_API_KEY: z.string(),
+  CLAUDE_MODEL: z.string().default('claude-3-5-sonnet-20241022'),
+  CLAUDE_MAX_TOKENS: z.string().transform(Number).default('800'),
   
   // Rate Limiting
   RATE_LIMIT_WINDOW_MS: z.string().transform(Number).default('900000'),
@@ -50,7 +50,7 @@ const envSchema = z.object({
   
   // API Timeouts
   SPOTIFY_API_TIMEOUT: z.string().transform(Number).default('5000'),
-  OPENAI_API_TIMEOUT: z.string().transform(Number).default('10000'),
+  CLAUDE_API_TIMEOUT: z.string().transform(Number).default('10000'),
 });
 
 // Validate environment variables
@@ -89,12 +89,12 @@ export const config = {
     timeout: env.SPOTIFY_API_TIMEOUT,
   },
   
-  // OpenAI
-  openai: {
-    apiKey: env.OPENAI_API_KEY,
-    model: env.OPENAI_MODEL,
-    maxTokens: env.OPENAI_MAX_TOKENS,
-    timeout: env.OPENAI_API_TIMEOUT,
+  // Claude
+  claude: {
+    apiKey: env.CLAUDE_API_KEY,
+    model: env.CLAUDE_MODEL,
+    maxTokens: env.CLAUDE_MAX_TOKENS,
+    timeout: env.CLAUDE_API_TIMEOUT,
   },
   
   // Rate Limiting
@@ -128,7 +128,7 @@ export function validateConfig(): void {
     { name: 'DATABASE_URL', value: config.databaseUrl },
     { name: 'JWT_SECRET', value: config.jwtSecret },
     { name: 'SPOTIFY_CLIENT_ID', value: config.spotify.clientId },
-    { name: 'OPENAI_API_KEY', value: config.openai.apiKey },
+    { name: 'CLAUDE_API_KEY', value: config.claude.apiKey },
   ];
 
   const missing = requiredConfigs.filter(({ value }) => !value);
