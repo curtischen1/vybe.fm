@@ -79,6 +79,8 @@ export class YouTubeMusicService {
    */
   async getStreamUrl(videoId: string): Promise<YouTubeStreamInfo | null> {
     try {
+      // Evict expired entries proactively
+      this.cleanCache();
       // Check cache first
       const cached = this.streamCache.get(videoId);
       if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
@@ -125,7 +127,8 @@ export class YouTubeMusicService {
       const audioFormats = ytdl.filterFormats(info.formats, 'audioonly');
       
       if (audioFormats.length > 0) {
-        const bestFormat = audioFormats[0]; // Get highest quality
+        const bestFormat = audioFormats
+          .sort((a, b) => (b.audioBitrate ?? 0) - (a.audioBitrate ?? 0))[0];
         
         if (bestFormat) {
           const streamInfo: YouTubeStreamInfo = {

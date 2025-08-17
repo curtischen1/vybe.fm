@@ -220,10 +220,10 @@ function loadAudio(track) {
         console.log('🔄 Stopped previous audio');
     }
     
-    // Check if we have a YouTube stream URL
-    if (track.streamUrl && track.streamUrl.includes('youtube.com')) {
+    // Check for YouTube stream availability (videoId or any streamUrl)
+    if (track.youtubeId || track.streamUrl) {
         console.log('🎵 Loading YouTube audio for:', track.name);
-        console.log('🔗 YouTube URL:', track.streamUrl);
+        if (track.streamUrl) console.log('🔗 YouTube stream URL:', track.streamUrl);
         console.log('🆔 YouTube ID:', track.youtubeId);
         
         // For now, we'll note that YouTube is available but can't play directly
@@ -233,6 +233,16 @@ function loadAudio(track) {
         
         // Create a mock audio player for demo purposes
         audioPlayer = createMockYouTubePlayer(track);
+
+        // Align events with HTML5 path for consistent UX
+        audioPlayer.addEventListener('canplay', () => {
+            console.log('✅ YouTube (mock) ready to play!');
+            updateAudioStatus('✅ YouTube ready to play!');
+        });
+        audioPlayer.addEventListener('ended', () => {
+            console.log('🏁 YouTube (mock) ended, moving to next track');
+            nextTrack();
+        });
         
     } else if (track.previewUrl && track.previewUrl !== 'null') {
         console.log('🎵 Loading audio preview for:', track.name);

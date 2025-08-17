@@ -580,12 +580,13 @@ class RecommendationEngineService {
       }
     }
 
-    const processingTime = Date.now() - startTime;
-    const successRate = recommendationsWithStreams.filter(t => t.streamUrl).length / recommendations.length;
+    const total = recommendations.length || 1;
+    const successful = recommendationsWithStreams.filter(t => t.streamUrl).length;
+    const successRate = successful / total;
     
-    logPerformance('youtube_stream_enrichment', processingTime, {
+    logPerformance('youtube_stream_enrichment', startTime, {
       totalTracks: recommendations.length,
-      successfulStreams: recommendationsWithStreams.filter(t => t.streamUrl).length,
+      successfulStreams: successful,
       successRate: (successRate * 100).toFixed(1) + '%'
     });
 
