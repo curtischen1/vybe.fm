@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
+import path from 'path';
 
 const app = express();
 
@@ -11,6 +12,9 @@ app.use(cors());
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static files from public directory
+app.use(express.static(path.join(process.cwd(), 'public')));
 
 // Health check
 app.get('/health', (req, res) => {
@@ -109,6 +113,17 @@ app.get('/api/v1/config', (req, res) => {
     hasDatabaseConfig: !!process.env.DATABASE_URL,
     timestamp: new Date().toISOString()
   });
+});
+
+// Catch-all handler: send back the index.html file for client-side routing
+app.get('*', (req, res) => {
+  // Skip API routes
+  if (req.path.startsWith('/api/') || req.path.startsWith('/health')) {
+    return res.status(404).json({ error: 'API endpoint not found' });
+  }
+  
+  // Serve the frontend
+  res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
 });
 
 export default app;
