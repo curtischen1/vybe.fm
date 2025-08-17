@@ -151,7 +151,7 @@ function initializeSpotifyPlayer() {
     spotifyPlayer.addListener('player_state_changed', (state) => {
         if (!state) return;
         
-        const { current_track, paused } = state.track_window;
+        const { paused, track_window: { current_track } } = state;
         
         if (current_track) {
             updatePlayerUI({
@@ -274,7 +274,7 @@ async function playSpotifyTrack(uri) {
 
 function simulateTrackProgress() {
     // Demo progress bar animation
-    const progressBar = document.getElementById('progress-bar');
+    const progressBar = document.getElementById('progress');
     if (progressBar) {
         let progress = 0;
         const interval = setInterval(() => {
