@@ -9,6 +9,7 @@ import { errorHandler } from '@/middleware/errorHandler';
 import { authRoutes } from '@/routes/auth';
 import { vybeRoutes } from '@/routes/vybes';
 import { userRoutes } from '@/routes/users';
+import { spotifyRoutes } from '@/routes/spotify';
 
 class VybeServer {
   private app: express.Application;
@@ -82,6 +83,7 @@ class VybeServer {
     this.app.use(`/api/${config.apiVersion}/auth`, authRoutes);
     this.app.use(`/api/${config.apiVersion}/vybes`, vybeRoutes);
     this.app.use(`/api/${config.apiVersion}/users`, userRoutes);
+    this.app.use(`/api/${config.apiVersion}/spotify`, spotifyRoutes);
 
     // 404 handler
     this.app.use('*', (req, res) => {

@@ -151,6 +151,21 @@ export interface SpotifyAuthRequest {
   state?: string;
 }
 
+export interface SpotifyAuthUrlResponse {
+  authUrl: string;
+  state: string;
+}
+
+export interface SpotifyProfileResponse {
+  id: string;
+  displayName?: string;
+  email?: string;
+  followers: number;
+  images: SpotifyImage[];
+  country: string;
+  product: string;
+}
+
 // Error types
 export interface ApiError {
   code: string;
