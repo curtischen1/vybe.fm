@@ -7,8 +7,8 @@ let currentTrackIndex = 0;
 let spotifyPlayer = null;
 let spotifyToken = null;
 let isSpotifyReady = false;
-
-// DOM ready
+let spotifyDeviceId = null;
+let currentVybeId = null;// DOM ready
 document.addEventListener('DOMContentLoaded', function() {
     console.log('📱 DOM loaded, setting up event listeners...');
     
@@ -58,35 +58,22 @@ function setupEventListeners() {
 }
 
 // Spotify Authentication
-function connectSpotify() {
-    console.log('🔗 Connecting to Spotify...');
+    console.log("🔗 Connecting to Spotify...");
     
-    // For demo purposes, we'll simulate auth
-    // In production, this would redirect to Spotify OAuth
-    const clientId = 'your_spotify_client_id'; // This would come from environment
-    const redirectUri = window.location.origin;
-    const scopes = [
-        'streaming',
-        'user-read-email',
-        'user-read-private',
-        'user-read-playback-state',
-        'user-modify-playback-state',
-        'user-read-currently-playing'
-    ].join(' ');
-    
-    const authUrl = `https://accounts.spotify.com/authorize?` +
-        `client_id=${clientId}&` +
-        `response_type=token&` +
-        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-        `scope=${encodeURIComponent(scopes)}`;
-    
-    // For demo, just show connected state
-    showSpotifyConnected();
-    
-    // In production, uncomment this to redirect to Spotify:
-    // window.location.href = authUrl;
-}
-
+    // Use Authorization Code (PKCE) via backend
+    fetch("/api/v1/spotify/auth-url")
+        .then(r => r.json())
+        .then(({ data }) => {
+            if (data?.authUrl) {
+                window.location.href = data.authUrl;
+            } else {
+                throw new Error("No authUrl returned");
+            }
+        })
+        .catch(err => {
+            console.error("❌ Failed to get Spotify auth URL", err);
+            alert("Failed to start Spotify authentication. Please try again.");
+        });
 function checkSpotifyAuth() {
     // Check URL hash for Spotify access token
     const hash = window.location.hash;
@@ -139,7 +126,7 @@ function initializeSpotifyPlayer() {
     spotifyPlayer.addListener('ready', ({ device_id }) => {
         console.log('✅ Spotify player ready with Device ID', device_id);
         isSpotifyReady = true;
-    });
+        spotifyDeviceId = device_id;    });
 
     // Not Ready
     spotifyPlayer.addListener('not_ready', ({ device_id }) => {
@@ -216,7 +203,7 @@ async function createVybe() {
         
         // Store recommendations
         currentRecommendations = data.recommendations || [];
-        currentTrackIndex = 0;
+        currentVybeId = data.id;        currentTrackIndex = 0;
         
         if (currentRecommendations.length > 0) {
             // Show player page
@@ -258,15 +245,26 @@ function playTrack(track) {
 
 async function playSpotifyTrack(uri) {
     try {
-        // In production, use Spotify Web API to start playback
-        // For demo, just update UI
-        updateAudioStatus('🎵 Playing via Spotify');
-        updatePlayPauseButton(true);
-        
-        // Simulate track progress
-        simulateTrackProgress();
-        
-    } catch (error) {
+        if (!spotifyToken) {
+            throw new Error("Missing Spotify access token");
+        }
+        if (!spotifyDeviceId) {
+            throw new Error("Missing Spotify device ID");
+        }
+        const res = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${encodeURIComponent(spotifyDeviceId)}`, {
+            method: "PUT",
+            headers: {
+                "Authorization": `Bearer ${spotifyToken}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ uris: [uri] }),
+        });
+        if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(`Spotify API error: ${res.status} ${res.statusText} - ${errText}`);
+        }
+        updateAudioStatus("🎵 Playing via Spotify");
+        updatePlayPauseButton(true);    } catch (error) {
         console.error('❌ Error playing Spotify track:', error);
         updateAudioStatus('❌ Playback failed');
     }
@@ -321,7 +319,7 @@ function likeTrack() {
         updateAudioStatus('👍 Track liked!');
         
         // Send feedback to backend
-        sendTrackFeedback(track.trackId, 'upvote');
+        sendTrackFeedback(currentVybeId, track.trackId, "upvote");
     }
 }
 
@@ -332,25 +330,24 @@ function dislikeTrack() {
         updateAudioStatus('👎 Track disliked');
         
         // Send feedback and skip to next
-        sendTrackFeedback(track.trackId, 'downvote');
+        sendTrackFeedback(currentVybeId, track.trackId, "downvote");
         nextTrack();
     }
 }
 
-async function sendTrackFeedback(trackId, feedbackType) {
-    try {
+async function sendTrackFeedback(vybeId, trackId, feedbackType) {    try {
         const response = await fetch('/api/v1/vybes/feedback', {
-            method: 'POST',
+        const response = await fetch(`/api/v1/vybes/${vybeId}/feedback`, {
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json',
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${spotifyToken || "demo-token"}`,
             },
             body: JSON.stringify({
                 trackId,
                 feedbackType
             })
-        });
-        
-        if (response.ok) {
+        });        if (response.ok) {
             console.log('✅ Feedback sent successfully');
         }
     } catch (error) {
