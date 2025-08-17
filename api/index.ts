@@ -15,7 +15,8 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'"],
       scriptSrcAttr: ["'unsafe-inline'"], // Allow inline event handlers
       imgSrc: ["'self'", "data:", "https:", "http:"], // Allow external images
-      connectSrc: ["'self'", "https:"]
+      connectSrc: ["'self'", "https:"],
+      mediaSrc: ["'self'", "https:", "http:", "data:", "*.archive.org", "*.learningcontainer.com", "*.commondatastorage.googleapis.com"] // Allow external audio
     }
   }
 }));
