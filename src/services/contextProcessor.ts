@@ -62,8 +62,10 @@ class ContextProcessorService {
       // Cache the result
       await this.cacheContext(contextText, analysis);
       
-      const cost = this.estimateTokenCost(contextText, JSON.stringify(analysis));
-      logOpenAiApi('context_interpretation', analysis.weights.valence !== undefined ? 1 : 0, cost, {
+          const cost = this.estimateTokenCost(contextText, JSON.stringify(analysis));
+    // Estimate tokens based on input/output length
+    const estimatedTokens = Math.ceil((contextText.length + JSON.stringify(analysis).length) / 4);
+    logOpenAiApi('context_interpretation', estimatedTokens, cost, {
         contextLength: contextText.length,
         confidence: analysis.confidence,
       });
@@ -105,8 +107,8 @@ class ContextProcessorService {
 
     // Parse Claude's response
     const content = response.content[0];
-    if (content.type === 'text') {
-      return this.parseClaudeResponse(content.text);
+    if (content && content.type === 'text') {
+      return this.parseClaudeResponse((content as any).text);
     } else {
       throw new Error('Unexpected response format from Claude');
     }
@@ -388,7 +390,10 @@ IMPORTANT: Use this history to PERSONALIZE the weights. If the user typically li
       
       batchResults.forEach((result, index) => {
         if (result) {
-          results.set(batch[index], result);
+          const key = batch[index];
+          if (key) {
+            results.set(key, result);
+          }
         }
       });
       

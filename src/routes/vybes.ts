@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { asyncHandler } from '@/middleware/errorHandler';
-import { authenticateToken, optionalAuth, userRateLimit } from '@/middleware/auth';
+import { authenticateToken, userRateLimit } from '@/middleware/auth';
 import { recommendationEngine } from '@/services/recommendationEngine';
 import { db } from '@/services/database';
 import { logUserActivity } from '@/utils/logger';
@@ -21,7 +21,7 @@ const router = Router();
 router.post('/', 
   authenticateToken,
   userRateLimit(10, 15 * 60 * 1000), // 10 vybes per 15 minutes per user
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req, res): Promise<any> => {
     const { context, referenceTrackIds, limit = 20 }: CreateVybeRequest = req.body;
     const userId = req.user.id;
 
@@ -115,8 +115,8 @@ router.post('/',
  */
 router.get('/', authenticateToken, asyncHandler(async (req, res) => {
   const userId = req.user.id;
-  const page = parseInt(req.query.page as string) || 1;
-  const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
+  const page = parseInt(req.query['page'] as string) || 1;
+  const limit = Math.min(parseInt(req.query['limit'] as string) || 20, 50);
 
   const result = await db.getUserVybes(userId, page, limit);
 
@@ -190,13 +190,13 @@ router.get('/stats', authenticateToken, asyncHandler(async (req, res) => {
  * @desc    Get specific vybe details
  * @access  Private (own vybes only)
  */
-router.get('/:vybeId', authenticateToken, asyncHandler(async (req, res) => {
+router.get('/:vybeId', authenticateToken, asyncHandler(async (req, res): Promise<any> => {
   const { vybeId } = req.params;
   const userId = req.user.id;
 
   const vybe = await db.client.vybe.findFirst({
     where: {
-      id: vybeId,
+      id: vybeId!,
       userId, // Ensure user can only access their own vybes
     },
     include: {
@@ -239,7 +239,7 @@ router.get('/:vybeId', authenticateToken, asyncHandler(async (req, res) => {
  * @desc    Provide feedback on a recommendation (core learning mechanism)
  * @access  Private
  */
-router.post('/:vybeId/feedback', authenticateToken, asyncHandler(async (req, res) => {
+router.post('/:vybeId/feedback', authenticateToken, asyncHandler(async (req, res): Promise<any> => {
   const { vybeId } = req.params;
   const { trackId, feedbackType, playTime }: FeedbackRequest = req.body;
   const userId = req.user.id;
@@ -264,7 +264,7 @@ router.post('/:vybeId/feedback', authenticateToken, asyncHandler(async (req, res
   // Verify vybe belongs to user
   const vybe = await db.client.vybe.findFirst({
     where: {
-      id: vybeId,
+      id: vybeId!,
       userId,
     },
   });
@@ -279,15 +279,15 @@ router.post('/:vybeId/feedback', authenticateToken, asyncHandler(async (req, res
 
   // Create feedback record (individual learning data)
   const feedback = await db.createFeedback({
-    vybeId,
+    vybeId: vybeId!,
     userId,
     trackId,
     feedbackType: feedbackType.toUpperCase() as 'UPVOTE' | 'DOWNVOTE' | 'SKIP',
-    playTime,
+    ...(playTime !== undefined && { playTime }),
   });
 
   logUserActivity(userId, 'feedback_provided', {
-    vybeId,
+    vybeId: vybeId!,
     trackId,
     feedbackType,
     playTime,
@@ -295,7 +295,7 @@ router.post('/:vybeId/feedback', authenticateToken, asyncHandler(async (req, res
 
   // Track analytics for individual learning
   await db.trackEvent('recommendation_feedback', {
-    vybeId,
+    vybeId: vybeId!,
     trackId,
     feedbackType,
     playTime,
@@ -306,7 +306,7 @@ router.post('/:vybeId/feedback', authenticateToken, asyncHandler(async (req, res
     success: true,
     data: {
       id: feedback.id,
-      vybeId,
+      vybeId: vybeId!,
       trackId,
       feedbackType,
       playTime,
@@ -322,14 +322,14 @@ router.post('/:vybeId/feedback', authenticateToken, asyncHandler(async (req, res
  * @desc    Get feedback for a specific vybe
  * @access  Private
  */
-router.get('/:vybeId/feedback', authenticateToken, asyncHandler(async (req, res) => {
+router.get('/:vybeId/feedback', authenticateToken, asyncHandler(async (req, res): Promise<any> => {
   const { vybeId } = req.params;
   const userId = req.user.id;
 
   // Verify vybe belongs to user
   const vybe = await db.client.vybe.findFirst({
     where: {
-      id: vybeId,
+      id: vybeId!,
       userId,
     },
   });
@@ -343,7 +343,7 @@ router.get('/:vybeId/feedback', authenticateToken, asyncHandler(async (req, res)
   }
 
   const feedback = await db.client.feedback.findMany({
-    where: { vybeId },
+    where: { vybeId: vybeId! },
     orderBy: { createdAt: 'desc' },
   });
 

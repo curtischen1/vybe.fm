@@ -1,5 +1,14 @@
 // API Request/Response Types for Vybe
 
+// Axios metadata extension
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    metadata?: {
+      startTime: number;
+    };
+  }
+}
+
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
@@ -55,7 +64,7 @@ export interface TrackRecommendation {
   name: string;
   artists: string[];
   album: string;
-  previewUrl?: string;
+  previewUrl: string | null;
   spotifyUrl: string;
   audioFeatures: SpotifyAudioFeatures;
   confidence: number;     // 0 to 1
@@ -63,6 +72,7 @@ export interface TrackRecommendation {
 }
 
 export interface SpotifyAudioFeatures {
+  id?: string;
   valence: number;
   energy: number;
   danceability: number;
@@ -74,7 +84,8 @@ export interface SpotifyAudioFeatures {
   loudness: number;
   mode: number;
   key: number;
-  timeSignature: number;
+  time_signature: number;
+  duration_ms?: number;
 }
 
 // Feedback types
@@ -186,7 +197,7 @@ export interface RateLimitError extends ApiError {
 
 // Search types
 export interface TrackSearchRequest {
-  query: string;
+  q: string;
   limit?: number;
   offset?: number;
 }
@@ -204,7 +215,7 @@ export interface SpotifyTrack {
   artists: SpotifyArtist[];
   album: SpotifyAlbum;
   duration: number;
-  previewUrl?: string;
+  previewUrl?: string | undefined;
   spotifyUrl: string;
   popularity: number;
 }

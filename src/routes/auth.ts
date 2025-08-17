@@ -6,8 +6,7 @@ import { logUserActivity } from '@/utils/logger';
 import { 
   RegisterRequest, 
   LoginRequest, 
-  SpotifyAuthRequest,
-  AuthResponse 
+  SpotifyAuthRequest
 } from '@/types/api';
 
 const router = Router();
@@ -18,7 +17,7 @@ const router = Router();
  * @access  Public
  */
 router.post('/register', asyncHandler(async (req, res) => {
-  const { email, password, spotifyCode }: RegisterRequest = req.body;
+  const { email, password }: RegisterRequest = req.body;
 
   // Register user with auth service
   const result = await authService.register(email, password);
@@ -70,8 +69,8 @@ router.post('/login', asyncHandler(async (req, res) => {
  * @desc    Handle Spotify OAuth callback
  * @access  Public
  */
-router.post('/spotify/callback', asyncHandler(async (req, res) => {
-  const { code, state }: SpotifyAuthRequest = req.body;
+router.post('/spotify/callback', asyncHandler(async (req, res): Promise<any> => {
+  const { code }: SpotifyAuthRequest = req.body;
 
   // TODO: Implement Spotify OAuth callback
   // - Exchange code for access token
@@ -93,7 +92,7 @@ router.post('/spotify/callback', asyncHandler(async (req, res) => {
  * @desc    Refresh JWT access token
  * @access  Public (with refresh token)
  */
-router.post('/refresh', asyncHandler(async (req, res) => {
+router.post('/refresh', asyncHandler(async (req, res): Promise<any> => {
   const { refreshToken } = req.body;
 
   if (!refreshToken) {
@@ -138,7 +137,7 @@ router.post('/logout', authenticateToken, asyncHandler(async (req, res) => {
  * @desc    Get Spotify authorization URL
  * @access  Public
  */
-router.get('/spotify/url', asyncHandler(async (req, res) => {
+router.get('/spotify/url', asyncHandler(async (_req, res): Promise<any> => {
   // TODO: Generate Spotify authorization URL
   // - Include required scopes
   // - Generate state parameter for security

@@ -290,7 +290,7 @@ class MusicAnalysisService {
         const includedFeatures = allFeatures.get(included.trackId);
         if (!includedFeatures) continue;
 
-        const similarity = this.calculateSimilarity(currentFeatures, includedFeatures);
+        const similarity = this.calculateSimilarity(currentFeatures as any, includedFeatures);
         
         if (similarity > maxSimilarityThreshold) {
           shouldInclude = false;
@@ -315,7 +315,7 @@ class MusicAnalysisService {
    * Classify potential genre based on audio features
    */
   public classifyGenre(audioFeatures: SpotifyAudioFeatures): GenreClassification[] {
-    const { energy, danceability, acousticness, instrumentalness, valence, tempo } = audioFeatures;
+    const { energy, danceability, acousticness, instrumentalness, valence } = audioFeatures;
     
     const classifications: GenreClassification[] = [];
 
@@ -399,7 +399,7 @@ class MusicAnalysisService {
       }
     });
     
-    return mode;
+    return mode || 1; // Default to major mode
   }
 
   private clamp(value: number, min: number, max: number): number {

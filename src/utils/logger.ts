@@ -17,7 +17,7 @@ export const logger = winston.createLogger({
   format: logFormat,
   defaultMeta: {
     service: 'vybe-api',
-    version: process.env.npm_package_version || '0.1.0',
+    version: process.env['npm_package_version'] || '0.1.0',
   },
   transports: [
     // File transport for all logs

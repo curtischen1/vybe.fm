@@ -5,7 +5,6 @@ import { db } from '@/services/database';
 import { 
   UnauthorizedError, 
   ConflictError, 
-  NotFoundError,
   ValidationAppError 
 } from '@/middleware/errorHandler';
 import { logUserActivity, logSecurityEvent } from '@/utils/logger';
@@ -53,7 +52,7 @@ class AuthService {
       expiresIn: config.jwtExpiresIn,
       issuer: 'vybe-api',
       audience: 'vybe-app',
-    });
+    } as any);
   }
 
   public generateRefreshToken(payload: { userId: string; email: string }): string {
@@ -61,7 +60,7 @@ class AuthService {
       expiresIn: config.jwtRefreshExpiresIn,
       issuer: 'vybe-api',
       audience: 'vybe-app',
-    });
+    } as any);
   }
 
   public verifyToken(token: string): JWTPayload {
@@ -125,9 +124,11 @@ class AuthService {
 
     // Hash password and create user
     const hashedPassword = await this.hashPassword(password);
+    // Note: hashedPassword will be used when implementing password reset functionality
     
     const userData = {
       email,
+      passwordHash: hashedPassword,
       ...(spotifyData && {
         spotifyId: spotifyData.spotifyId,
         spotifyAccessToken: spotifyData.accessToken,
@@ -224,7 +225,7 @@ class AuthService {
 
       return tokens;
     } catch (error) {
-      logSecurityEvent('token_refresh_failed', 'medium', { error: error.message });
+      logSecurityEvent('token_refresh_failed', 'medium', { error: (error as Error).message });
       throw new UnauthorizedError('Invalid refresh token');
     }
   }

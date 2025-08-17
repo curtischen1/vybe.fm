@@ -60,7 +60,7 @@ class VybeServer {
     this.app.use('/api/', limiter);
 
     // Request logging
-    this.app.use((req, res, next) => {
+    this.app.use((req, _res, next) => {
       logger.info(`${req.method} ${req.path}`, {
         ip: req.ip,
         userAgent: req.get('User-Agent'),
@@ -71,11 +71,11 @@ class VybeServer {
 
   private setupRoutes(): void {
     // Health check
-    this.app.get('/health', (req, res) => {
+    this.app.get('/health', (_req, res) => {
       res.status(200).json({
         status: 'healthy',
         timestamp: new Date().toISOString(),
-        version: process.env.npm_package_version || '0.1.0',
+        version: process.env['npm_package_version'] || '0.1.0',
       });
     });
 

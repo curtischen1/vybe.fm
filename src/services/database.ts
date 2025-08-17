@@ -81,7 +81,7 @@ class DatabaseService {
 
   // Transaction wrapper
   public async transaction<T>(
-    fn: (prisma: PrismaClient) => Promise<T>
+    fn: (prisma: any) => Promise<T>
   ): Promise<T> {
     return this.prisma.$transaction(fn);
   }
@@ -274,8 +274,8 @@ class DatabaseService {
       data: {
         event,
         data: JSON.stringify(data),
-        userId,
-        sessionId,
+        userId: userId || null,
+        sessionId: sessionId || null,
       },
     });
   }

@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import { config } from '@/config/environment';
 import { db } from '@/services/database';
 import { SpotifyApiError } from '@/middleware/errorHandler';
@@ -124,7 +124,7 @@ class SpotifyService {
     this.client.interceptors.request.use(
       (config) => {
         const startTime = Date.now();
-        config.metadata = { startTime };
+        (config as any).metadata = { startTime };
         return config;
       },
       (error) => {
@@ -137,7 +137,9 @@ class SpotifyService {
     this.client.interceptors.response.use(
       (response) => {
         const endTime = Date.now();
-        const duration = endTime - response.config.metadata.startTime;
+        const duration = (response.config as any).metadata?.startTime
+          ? endTime - (response.config as any).metadata.startTime
+          : 0;
         
         logSpotifyApi(
           `${response.config.method?.toUpperCase()} ${response.config.url}`,
@@ -561,27 +563,36 @@ class SpotifyService {
 
   private async cacheTracksInBackground(tracks: SpotifyTrack[]): Promise<void> {
     // Cache tracks in background without blocking the response
-    setImmediate(async () => {
+    Promise.resolve().then(async () => {
       for (const track of tracks) {
-        await this.cacheTrack(track);
+        await this.cacheTrack(track).catch(error =>
+          logError('Background cache failed', error as Error, { trackId: track.id })
+        );
       }
-    });
+    }).catch(error =>
+      logError('Background caching batch failed', error as Error)
+    );
   }
 
   private formatCachedTrack(cached: any): SpotifyTrack {
-    return {
-      id: cached.id,
-      name: cached.name,
-      artists: JSON.parse(cached.artists),
-      album: JSON.parse(cached.album),
-      duration_ms: cached.duration * 1000,
-      preview_url: cached.previewUrl,
-      external_urls: {
-        spotify: cached.spotifyUrl,
-      },
-      popularity: cached.popularity,
-      explicit: false, // Default value for cached tracks
-    };
+    try {
+      return {
+        id: cached.id,
+        name: cached.name,
+        artists: JSON.parse(cached.artists),
+        album: JSON.parse(cached.album),
+        duration_ms: cached.duration * 1000,
+        preview_url: cached.previewUrl,
+        external_urls: {
+          spotify: cached.spotifyUrl,
+        },
+        popularity: cached.popularity,
+        explicit: false, // Default value for cached tracks
+      };
+    } catch (error) {
+      logError('Failed to parse cached track', error as Error, { trackId: cached.id });
+      throw new SpotifyApiError('Invalid cached track data');
+    }
   }
 
   private chunkArray<T>(array: T[], size: number): T[][] {

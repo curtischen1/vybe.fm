@@ -18,7 +18,7 @@ declare global {
  */
 export const authenticateToken = async (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
@@ -46,7 +46,7 @@ export const authenticateToken = async (
     logSecurityEvent('auth_token_verification_failed', 'medium', {
       path: req.path,
       ip: req.ip,
-      error: error.message,
+      error: (error as Error).message,
     });
     next(error);
   }
@@ -58,7 +58,7 @@ export const authenticateToken = async (
  */
 export const optionalAuth = async (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
@@ -75,7 +75,7 @@ export const optionalAuth = async (
         logSecurityEvent('optional_auth_failed', 'low', {
           path: req.path,
           ip: req.ip,
-          error: error.message,
+          error: (error as Error).message,
         });
       }
     }
@@ -91,7 +91,7 @@ export const optionalAuth = async (
  */
 export const requireSpotify = (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ): void => {
   if (!req.user) {
@@ -104,7 +104,7 @@ export const requireSpotify = (
       path: req.path,
     });
     
-    res.status(400).json({
+    _res.status(400).json({
       success: false,
       error: 'Spotify integration required',
       code: 'SPOTIFY_INTEGRATION_REQUIRED',
@@ -255,18 +255,18 @@ export const validateResourceOwnership = (resourceUserIdField: string = 'userId'
  * Security headers middleware
  */
 export const securityHeaders = (
-  req: Request,
-  res: Response,
+  _req: Request,
+  _res: Response,
   next: NextFunction
 ): void => {
   // Remove sensitive headers
-  res.removeHeader('X-Powered-By');
+  _res.removeHeader('X-Powered-By');
   
   // Add security headers
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
-  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  _res.setHeader('X-Content-Type-Options', 'nosniff');
+  _res.setHeader('X-Frame-Options', 'DENY');
+  _res.setHeader('X-XSS-Protection', '1; mode=block');
+  _res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   
   next();
 };

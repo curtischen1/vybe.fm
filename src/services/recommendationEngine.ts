@@ -169,9 +169,9 @@ class RecommendationEngineService {
       });
 
       // Get user's preferences from database
-      const userPreferences = await db.client.userPreferences.findUnique({
-        where: { userId },
-      });
+      // const userPreferences = await db.client.userPreferences.findUnique({
+      //   where: { userId },
+      // });
 
       // Analyze individual patterns from user's own behavior
       const profile: UserMusicProfile = {
@@ -234,8 +234,8 @@ class RecommendationEngineService {
    */
   private async findCandidateTracks(
     contextAnalysis: any,
-    referenceProfile: any,
-    excludeTrackIds: string[]
+    _referenceProfile: any,
+    _excludeTrackIds: string[]
   ): Promise<Array<{ trackId: string; features: SpotifyAudioFeatures }>> {
     
     // Strategy 1: Search by genre and mood keywords
@@ -246,7 +246,7 @@ class RecommendationEngineService {
       try {
         const searchResults = await spotifyService.searchTracks(query, 50);
         const trackIds = searchResults.tracks.items
-          .filter(track => !excludeTrackIds.includes(track.id))
+          .filter(track => !_excludeTrackIds.includes(track.id))
           .map(track => track.id)
           .slice(0, 30); // Limit per search
 
@@ -265,7 +265,7 @@ class RecommendationEngineService {
     }
 
     // Strategy 2: Use cached similar tracks from database
-    const cachedSimilar = await this.findSimilarCachedTracks(referenceProfile, excludeTrackIds);
+    const cachedSimilar = await this.findSimilarCachedTracks(_referenceProfile, _excludeTrackIds);
     cachedSimilar.forEach(({ trackId, features }) => {
       if (!candidateMap.has(trackId)) {
         candidateMap.set(trackId, features);
@@ -293,7 +293,7 @@ class RecommendationEngineService {
       // Calculate similarity to target profile
       const similarity = musicAnalysisService.calculateSimilarity(
         weightedProfile,
-        features,
+        features as any,
         weightedProfile.weights
       );
 
@@ -312,7 +312,7 @@ class RecommendationEngineService {
           name: track.name,
           artists: track.artists.map(a => a.name),
           album: track.album.name,
-          previewUrl: track.preview_url,
+          previewUrl: track.preview_url || null,
           spotifyUrl: track.external_urls.spotify,
           audioFeatures: features,
           confidence: finalScore,
@@ -347,8 +347,8 @@ class RecommendationEngineService {
     for (const feedback of userProfile.feedbackHistory) {
       if (feedback.feedbackScore > 0) { // Only consider positive feedback
         const similarity = musicAnalysisService.calculateSimilarity(
-          trackFeatures,
-          feedback.audioFeatures as SpotifyAudioFeatures
+          trackFeatures as any,
+          feedback.audioFeatures as any
         );
         
         // Weight by how much they liked it and how recently
@@ -379,7 +379,7 @@ class RecommendationEngineService {
 
       // Check artist diversity
       const mainArtist = rec.artists[0];
-      if (usedArtists.has(mainArtist) && usedArtists.size < limit / 2) {
+      if (mainArtist && usedArtists.has(mainArtist) && usedArtists.size < limit / 2) {
         continue; // Skip if we already have this artist (unless we need to fill quota)
       }
 
@@ -387,8 +387,8 @@ class RecommendationEngineService {
       let tooSimilar = false;
       for (const existing of diversified) {
         const similarity = musicAnalysisService.calculateSimilarity(
-          rec.audioFeatures,
-          existing.audioFeatures
+          rec.audioFeatures as any,
+          existing.audioFeatures as any
         );
         
         if (similarity > minSimilarityThreshold) {
@@ -399,7 +399,7 @@ class RecommendationEngineService {
 
       if (!tooSimilar) {
         diversified.push(rec);
-        usedArtists.add(mainArtist);
+        if (mainArtist) usedArtists.add(mainArtist);
       }
     }
 
@@ -449,7 +449,7 @@ class RecommendationEngineService {
     };
   }
 
-  private extractContextPatterns(feedbackHistory: any[]): Map<string, ContextWeights> {
+  private extractContextPatterns(_feedbackHistory: any[]): Map<string, ContextWeights> {
     // Analyze user's individual context patterns
     const patterns = new Map<string, ContextWeights>();
     
@@ -469,7 +469,7 @@ class RecommendationEngineService {
     }));
   }
 
-  private findSimilarContextPattern(contextText: string, userProfile: UserMusicProfile): ContextWeights | null {
+  private findSimilarContextPattern(_contextText: string, _userProfile: UserMusicProfile): ContextWeights | null {
     // Find user's individual patterns for similar contexts
     // This would use semantic similarity to match contexts
     return null; // Simplified for now
@@ -494,8 +494,8 @@ class RecommendationEngineService {
   }
 
   private async findSimilarCachedTracks(
-    referenceProfile: any,
-    excludeTrackIds: string[]
+    _referenceProfile: any,
+    _excludeTrackIds: string[]
   ): Promise<Array<{ trackId: string; features: SpotifyAudioFeatures }>> {
     // Find similar tracks from cache (would implement similarity search)
     return [];
@@ -506,15 +506,15 @@ class RecommendationEngineService {
     return Math.exp(-daysSince / 30); // Exponential decay over 30 days
   }
 
-  private generateTrackReasoning(similarity: number, personalPreference: number, features: SpotifyAudioFeatures): string {
+  private generateTrackReasoning(similarity: number, personalPreference: number, _features: SpotifyAudioFeatures): string {
     return `Similarity: ${(similarity * 100).toFixed(1)}%, Personal fit: ${(personalPreference * 100).toFixed(1)}%`;
   }
 
-  private generateRecommendationReasoning(contextAnalysis: any, referenceProfile: any, userProfile: UserMusicProfile): string {
-    return `Analyzed context "${contextAnalysis.mood}" with ${userProfile.feedbackHistory.length} personal interactions to create individual recommendations.`;
+  private generateRecommendationReasoning(contextAnalysis: any, _referenceProfile: any, _userProfile: UserMusicProfile): string {
+    return `Analyzed context "${contextAnalysis.mood}" with ${_userProfile.feedbackHistory.length} personal interactions to create individual recommendations.`;
   }
 
-  private async updateUserProfileFromInteraction(userId: string, contextAnalysis: any, referenceProfile: any): Promise<void> {
+  private async updateUserProfileFromInteraction(userId: string, contextAnalysis: any, _referenceProfile: any): Promise<void> {
     // Update user's individual profile with this interaction
     // This helps improve future recommendations based on their behavior
     try {

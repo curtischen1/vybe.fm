@@ -83,7 +83,7 @@ export const errorHandler = (
   error: Error,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): void => {
   // Default error response
   let statusCode = 500;
@@ -120,7 +120,7 @@ export const errorHandler = (
   else if (error instanceof ValidationAppError) {
     statusCode = error.statusCode;
     const validationError: ValidationError = {
-      code: error.code,
+      code: 'VALIDATION_ERROR' as const,
       message: error.message,
       fields: error.fields,
       timestamp: new Date().toISOString(),
@@ -190,7 +190,7 @@ export const errorHandler = (
     code: errorResponse.code,
     timestamp: errorResponse.timestamp,
     ...(errorResponse as any).fields && { fields: (errorResponse as any).fields },
-    ...(process.env.NODE_ENV === 'development' && { 
+    ...(process.env['NODE_ENV'] === 'development' && { 
       stack: error.stack,
       details: error 
     }),
@@ -207,8 +207,8 @@ export const asyncHandler = (
 };
 
 // 404 handler
-export const notFoundHandler = (req: Request, res: Response, next: NextFunction) => {
-  const error = new NotFoundError(`Route ${req.originalUrl} not found`);
+export const notFoundHandler = (_req: Request, _res: Response, next: NextFunction) => {
+  const error = new NotFoundError(`Route ${_req.originalUrl} not found`);
   next(error);
 };
 

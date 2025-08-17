@@ -4,7 +4,7 @@ import { asyncHandler } from '@/middleware/errorHandler';
 const router = Router();
 
 // Placeholder for user routes
-router.get('/profile', asyncHandler(async (req, res) => {
+router.get('/profile', asyncHandler(async (_req, res) => {
   res.json({ message: 'User profile - coming soon' });
 }));
 

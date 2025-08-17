@@ -5,8 +5,7 @@ import { spotifyService } from '@/services/spotify';
 import { authService } from '@/services/auth';
 import { db } from '@/services/database';
 import { logUserActivity } from '@/utils/logger';
-import { 
-  TrackSearchRequest,
+import {
   TrackSearchResponse,
   SpotifyAuthRequest 
 } from '@/types/api';
@@ -18,7 +17,7 @@ const router = Router();
  * @desc    Get Spotify authorization URL for OAuth flow
  * @access  Public
  */
-router.get('/auth-url', asyncHandler(async (req, res) => {
+router.get('/auth-url', asyncHandler(async (_req, res) => {
   const state = Math.random().toString(36).substring(2, 15);
   const authUrl = spotifyService.getAuthorizationUrl(state);
 
@@ -38,8 +37,8 @@ router.get('/auth-url', asyncHandler(async (req, res) => {
  * @desc    Handle Spotify OAuth callback and link account
  * @access  Private
  */
-router.post('/callback', authenticateToken, asyncHandler(async (req, res) => {
-  const { code, state }: SpotifyAuthRequest = req.body;
+router.post('/callback', authenticateToken, asyncHandler(async (req, res): Promise<any> => {
+  const { code }: SpotifyAuthRequest = req.body;
   const userId = req.user.id;
 
   if (!code) {
@@ -94,7 +93,7 @@ router.post('/callback', authenticateToken, asyncHandler(async (req, res) => {
  * @desc    Refresh user's Spotify access token
  * @access  Private (requires Spotify integration)
  */
-router.post('/refresh-token', authenticateToken, requireSpotify, asyncHandler(async (req, res) => {
+router.post('/refresh-token', authenticateToken, requireSpotify, asyncHandler(async (req, res): Promise<any> => {
   const userId = req.user.id;
   const user = req.user;
 
@@ -136,12 +135,12 @@ router.post('/refresh-token', authenticateToken, requireSpotify, asyncHandler(as
  * @desc    Search for tracks on Spotify
  * @access  Public (but better results with auth)
  */
-router.get('/search/tracks', optionalAuth, asyncHandler(async (req, res) => {
+router.get('/search/tracks', optionalAuth, asyncHandler(async (req, res): Promise<any> => {
   const { 
     q: query, 
     limit = 20, 
     offset = 0 
-  }: TrackSearchRequest = req.query as any;
+  } = req.query as any;
 
   if (!query) {
     return res.status(400).json({
@@ -151,8 +150,8 @@ router.get('/search/tracks', optionalAuth, asyncHandler(async (req, res) => {
     });
   }
 
-  const parsedLimit = Math.min(parseInt(limit as string) || 20, 50);
-  const parsedOffset = parseInt(offset as string) || 0;
+  const parsedLimit = Math.min(parseInt(String(limit)) || 20, 50);
+  const parsedOffset = parseInt(String(offset)) || 0;
 
   // Search tracks
   const searchResults = await spotifyService.searchTracks(
@@ -174,18 +173,15 @@ router.get('/search/tracks', optionalAuth, asyncHandler(async (req, res) => {
     tracks: searchResults.tracks.items.map(track => ({
       id: track.id,
       name: track.name,
-      artists: track.artists.map(artist => ({
-        id: artist.id,
-        name: artist.name,
-      })),
+      artists: track.artists.map(a => ({ id: a.id, name: a.name })),
       album: {
         id: track.album.id,
         name: track.album.name,
         releaseDate: track.album.release_date,
-        images: track.album.images,
+        images: track.album.images
       },
       duration: Math.floor(track.duration_ms / 1000),
-      previewUrl: track.preview_url,
+      previewUrl: track.preview_url || undefined,
       spotifyUrl: track.external_urls.spotify,
       popularity: track.popularity,
     })),
@@ -207,7 +203,7 @@ router.get('/search/tracks', optionalAuth, asyncHandler(async (req, res) => {
  * @desc    Get detailed track information
  * @access  Public
  */
-router.get('/tracks/:trackId', asyncHandler(async (req, res) => {
+router.get('/tracks/:trackId', asyncHandler(async (req, res): Promise<any> => {
   const { trackId } = req.params;
 
   if (!trackId) {
@@ -242,7 +238,7 @@ router.get('/tracks/:trackId', asyncHandler(async (req, res) => {
  * @desc    Get multiple tracks by IDs
  * @access  Public
  */
-router.post('/tracks/batch', asyncHandler(async (req, res) => {
+router.post('/tracks/batch', asyncHandler(async (req, res): Promise<any> => {
   const { trackIds } = req.body;
 
   if (!trackIds || !Array.isArray(trackIds) || trackIds.length === 0) {
@@ -285,7 +281,7 @@ router.post('/tracks/batch', asyncHandler(async (req, res) => {
  * @desc    Get audio features for a track (core of recommendation engine)
  * @access  Public
  */
-router.get('/audio-features/:trackId', asyncHandler(async (req, res) => {
+router.get('/audio-features/:trackId', asyncHandler(async (req, res): Promise<any> => {
   const { trackId } = req.params;
 
   if (!trackId) {
@@ -310,7 +306,7 @@ router.get('/audio-features/:trackId', asyncHandler(async (req, res) => {
  * @desc    Get audio features for multiple tracks
  * @access  Public
  */
-router.post('/audio-features/batch', asyncHandler(async (req, res) => {
+router.post('/audio-features/batch', asyncHandler(async (req, res): Promise<any> => {
   const { trackIds } = req.body;
 
   if (!trackIds || !Array.isArray(trackIds) || trackIds.length === 0) {
@@ -344,7 +340,7 @@ router.post('/audio-features/batch', asyncHandler(async (req, res) => {
  * @desc    Create a Spotify playlist from Vybe recommendations
  * @access  Private (requires Spotify integration)
  */
-router.post('/playlist/create', authenticateToken, requireSpotify, asyncHandler(async (req, res) => {
+router.post('/playlist/create', authenticateToken, requireSpotify, asyncHandler(async (req, res): Promise<any> => {
   const { name, description, trackIds } = req.body;
   const userId = req.user.id;
   const spotifyUserId = req.user.spotifyId;

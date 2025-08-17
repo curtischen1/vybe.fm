@@ -12,7 +12,7 @@ const envSchema = z.object({
   
   // Database
   DATABASE_URL: z.string().url(),
-  REDIS_URL: z.string().url(),
+  REDIS_URL: z.string().url().optional(),
   
   // JWT
   JWT_SECRET: z.string().min(32),
@@ -74,7 +74,7 @@ export const config = {
   
   // Database
   databaseUrl: env.DATABASE_URL,
-  redisUrl: env.REDIS_URL,
+  redisUrl: env.REDIS_URL || undefined,
   
   // JWT
   jwtSecret: env.JWT_SECRET,
