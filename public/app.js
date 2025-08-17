@@ -222,7 +222,7 @@ function populateQueue() {
         const queueItem = document.createElement('div');
         queueItem.className = 'queue-item';
         queueItem.innerHTML = `
-            <img src="https://via.placeholder.com/40x40/1a1a1a/ffffff?text=🎵" alt="Album">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%23333'/%3E%3Ctext x='20' y='20' font-family='Arial' font-size='16' fill='white' text-anchor='middle' dominant-baseline='middle'%3E🎵%3C/text%3E%3C/svg%3E" alt="Album">
             <div class="queue-item-info">
                 <h5>${track.name || 'Unknown Track'}</h5>
                 <p>${track.artists?.map(a => a.name).join(', ') || 'Unknown Artist'}</p>
