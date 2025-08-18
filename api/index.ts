@@ -124,50 +124,55 @@ async function generateMusicRecommendationsWithSpotify(context: string, referenc
   try {
     // Generate base recommendations
     const baseRecommendations = await generateMusicRecommendations(context, referenceTrackIds);
-    
+
     // Map to realistic Spotify track IDs based on context (for demo)
-    // In production, this would search Spotify API for real tracks
-    const spotifyTrackMap = {
-      // Chill/Lofi tracks
+    // In production, resolve real IDs via SpotifyService.searchTracks(...)
+    const spotifyTrackMap: Record<string, string[]> = {
       chill: ["4iV5W9uYEdYUVa79Axb7Rh", "2GN4wrZhZHyW8wR0Ub7yTG", "5ZrDmXOzCOUgey7Hm8GVGM"],
       lofi: ["1Z0GU93IK9Nzf5XWF6ZjKT", "4uUG5RXrOk84mYEfFvj3cK", "2plbrEY59IikOBgBGLjaoe"],
       study: ["7F8J1hCANEYoqTt8EUIe2Z", "1Mi0brlU9QOhCLLGEbfL1X", "5E30LdtzQTlS4f9suNmPRk"],
-      // Upbeat tracks
       upbeat: ["4fK6E2UywZTJIa5kWnCD6x", "2YJFLl3nD3Mq5ChKCpRhCp", "3Ki1bnQJUdNlePyS4XDCJE"],
       energy: ["6L8GaQGACFUBUrztKBPq3X", "1MKAD0XNgWf34sKD4AYs8a", "4qQJx3lEApOp7VgxBCKkVj"],
       workout: ["4tWMrvHCdKQ6FT3LPBNcZg", "7J4bGn1rO8X9jP5vYtXXbV", "0kpCFHLPE5GS6JaTDEwKDf"],
-      // Default fallbacks
       default: ["4jPy3l0RUwlUI9T5XHBW2m", "3Hyu2i4lhNy1wW6ql1WSeK", "1EzrEau3jJI5wMoOo8MVGA"]
     };
-    
-    // Add realistic Spotify URIs based on context
+
+    const contextLower = context.toLowerCase();
+    let category = "default";
+    if (contextLower.includes("chill") || contextLower.includes("relax")) category = "chill";
+    else if (contextLower.includes("lofi") || contextLower.includes("lo-fi")) category = "lofi";
+    else if (contextLower.includes("study") || contextLower.includes("focus")) category = "study";
+    else if (contextLower.includes("upbeat") || contextLower.includes("happy")) category = "upbeat";
+    else if (contextLower.includes("energy") || contextLower.includes("pump")) category = "energy";
+    else if (contextLower.includes("workout") || contextLower.includes("gym")) category = "workout";
+
+    const trackIds = spotifyTrackMap[category] || spotifyTrackMap.default;
     const recommendationsWithSpotify = baseRecommendations.map((track, index) => {
-      // Determine track category from context
-      const contextLower = context.toLowerCase();
-      let category = "default";
-      
-      if (contextLower.includes("chill") || contextLower.includes("relax")) category = "chill";
-      else if (contextLower.includes("lofi") || contextLower.includes("lo-fi")) category = "lofi";
-      else if (contextLower.includes("study") || contextLower.includes("focus")) category = "study";
-      else if (contextLower.includes("upbeat") || contextLower.includes("happy")) category = "upbeat";
-      else if (contextLower.includes("energy") || contextLower.includes("pump")) category = "energy";
-      else if (contextLower.includes("workout") || contextLower.includes("gym")) category = "workout";
-      
-      // Get realistic Spotify track ID
-      const trackIds = spotifyTrackMap[category] || spotifyTrackMap.default;
       const spotifyId = trackIds[index % trackIds.length];
-      
       return {
         ...track,
-        id: spotifyId, // Use real Spotify ID
+        id: spotifyId,
         spotifyUri: `spotify:track:${spotifyId}`,
-        canPlay: true, // Can be played via Spotify Web Playback SDK
-        requiresPremium: true, // Spotify Premium required for playback
-        external_urls: {
-          spotify: `https://open.spotify.com/track/${spotifyId}`
-        }
+        canPlay: true,
+        requiresPremium: true,
+        spotifyUrl: `https://open.spotify.com/track/${spotifyId}`
       };
-    });}
+    });
+
+    console.log(`✅ Enhanced ${recommendationsWithSpotify.length} tracks with Spotify URIs for Web Playback SDK`);
+    return recommendationsWithSpotify;
+  } catch (error) {
+    console.error('Error in generateMusicRecommendationsWithSpotify:', error);
+    // Fallback but keep response shape consistent
+    const base = await generateMusicRecommendations(context, referenceTrackIds);
+    return base.map(track => ({
+      ...track,
+      spotifyUri: null,
+      canPlay: false,
+      requiresPremium: true
+    }));
+  }
+}
 
 // Function to generate realistic music recommendations
 async function generateMusicRecommendations(context: string, referenceTrackIds: string[] = []) {

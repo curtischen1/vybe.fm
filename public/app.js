@@ -319,7 +319,7 @@ function likeTrack() {
         updateAudioStatus('👍 Track liked!');
         
         // Send feedback to backend
-        sendTrackFeedback(currentVybeId, track.trackId, "upvote");
+        sendTrackFeedback(currentVybeId, track.id, "upvote");
     }
 }
 
@@ -330,7 +330,7 @@ function dislikeTrack() {
         updateAudioStatus('👎 Track disliked');
         
         // Send feedback and skip to next
-        sendTrackFeedback(currentVybeId, track.trackId, "downvote");
+        sendTrackFeedback(currentVybeId, track.id, "downvote");
         nextTrack();
     }
 }
