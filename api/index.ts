@@ -87,6 +87,71 @@ app.get('/api/v1/spotify/auth-url', (req, res) => {
   });
 });
 
+// Spotify OAuth Callback endpoint
+app.post('/api/v1/spotify/callback', async (req, res) => {
+  try {
+    const { code } = req.body;
+    
+    if (!code) {
+      return res.status(400).json({ 
+        error: 'Authorization code is required',
+        message: 'Missing authorization code from Spotify'
+      });
+    }
+
+    const clientId = process.env.SPOTIFY_CLIENT_ID;
+    const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+    const redirectUri = process.env.SPOTIFY_REDIRECT_URI || 'http://localhost:3000/auth/spotify/callback';
+
+    if (!clientId || !clientSecret) {
+      return res.status(500).json({ 
+        error: 'Spotify credentials not configured',
+        message: 'SPOTIFY_CLIENT_ID or SPOTIFY_CLIENT_SECRET missing'
+      });
+    }
+
+    // Exchange authorization code for access token
+    const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`,
+      },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code: code,
+        redirect_uri: redirectUri,
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      console.error('❌ Spotify token exchange failed:', errorText);
+      return res.status(400).json({ 
+        error: 'Token exchange failed',
+        message: 'Failed to exchange authorization code for access token'
+      });
+    }
+
+    const tokenData = await tokenResponse.json();
+    
+    // Return access token in the exact format the frontend expects
+    res.json({ 
+      accessToken: tokenData.access_token,
+      refreshToken: tokenData.refresh_token,
+      expiresIn: tokenData.expires_in,
+      tokenType: tokenData.token_type
+    });
+
+  } catch (error) {
+    console.error('❌ Spotify callback error:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: 'Failed to process Spotify authentication'
+    });
+  }
+});
+
 // Enhanced Vybe creation endpoint with real music recommendations
 app.post('/api/v1/vybes', async (req, res) => {
   const { context, referenceTrackIds } = req.body;
