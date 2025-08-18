@@ -417,9 +417,9 @@ async function sendTrackFeedback(vybeId, trackId, feedbackType) {
     try {
         const response = await fetch(`/api/v1/vybes/${vybeId}/feedback`, {
             method: "POST",
+            credentials: "include",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${spotifyToken || "demo-token"}`,
             },
             body: JSON.stringify({
                 trackId: trackId,
