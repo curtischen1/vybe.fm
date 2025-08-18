@@ -8,47 +8,70 @@ let spotifyPlayer = null;
 let spotifyToken = null;
 let isSpotifyReady = false;
 let spotifyDeviceId = null;
-let currentVybeId = null;// DOM ready
+let currentVybeId = null;
+
+// Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('📱 DOM loaded, setting up event listeners...');
+    console.log('🚀 DOM loaded, setting up event listeners...');
     
     // Set up event listeners
     setupEventListeners();
     
-    // Check for Spotify auth in URL params
+    // Check for Spotify auth callback
     checkSpotifyAuth();
     
-    // Initialize Spotify SDK when available
-    window.onSpotifyWebPlaybackSDKReady = initializeSpotifyPlayer;
+    // Initialize Spotify if SDK is ready
+    if (window.Spotify) {
+        console.log('🎵 Spotify SDK already loaded');
+        onSpotifyWebPlaybackSDKReady();
+    }
 });
 
 function setupEventListeners() {
-    // Spotify login
-    const spotifyLoginBtn = document.getElementById('spotify-login-btn');
-    if (spotifyLoginBtn) {
-        spotifyLoginBtn.addEventListener('click', connectSpotify);
-    }
-    
     // Create Vybe button
     const createBtn = document.getElementById('create-vybe-btn');
     if (createBtn) {
         createBtn.addEventListener('click', createVybe);
     }
     
-    // Player controls
-    const playPauseBtn = document.getElementById('play-pause-btn');
-    const prevBtn = document.getElementById('prev-btn');
-    const nextBtn = document.getElementById('next-btn');
-    const likeBtn = document.getElementById('like-btn');
-    const dislikeBtn = document.getElementById('dislike-btn');
-    const backBtn = document.getElementById('back-btn');
+    // Spotify login button  
+    const spotifyBtn = document.getElementById('spotify-login-btn');
+    if (spotifyBtn) {
+        spotifyBtn.addEventListener('click', connectSpotify);
+    }
     
-    if (playPauseBtn) playPauseBtn.addEventListener('click', togglePlayPause);
-    if (prevBtn) prevBtn.addEventListener('click', previousTrack);
-    if (nextBtn) nextBtn.addEventListener('click', nextTrack);
-    if (likeBtn) likeBtn.addEventListener('click', likeTrack);
-    if (dislikeBtn) dislikeBtn.addEventListener('click', dislikeTrack);
-    if (backBtn) backBtn.addEventListener('click', () => showPage('create-vybe-page'));
+    // Player controls
+    const playPauseBtn = document.getElementById('play-pause');
+    if (playPauseBtn) {
+        playPauseBtn.addEventListener('click', togglePlayPause);
+    }
+    
+    const prevBtn = document.getElementById('prev-track');
+    if (prevBtn) {
+        prevBtn.addEventListener('click', previousTrack);
+    }
+    
+    const nextBtn = document.getElementById('next-track');
+    if (nextBtn) {
+        nextBtn.addEventListener('click', nextTrack);
+    }
+    
+    // Like/Dislike buttons
+    const likeBtn = document.getElementById('like-btn');
+    if (likeBtn) {
+        likeBtn.addEventListener('click', likeTrack);
+    }
+    
+    const dislikeBtn = document.getElementById('dislike-btn');
+    if (dislikeBtn) {
+        dislikeBtn.addEventListener('click', dislikeTrack);
+    }
+    
+    // Back to create button
+    const backBtn = document.getElementById('back-to-create');
+    if (backBtn) {
+        backBtn.addEventListener('click', () => showPage('create-vybe-page'));
+    }
     
     // Context character counter
     const contextInput = document.getElementById('context-input');
@@ -59,22 +82,20 @@ function setupEventListeners() {
 
 // Spotify Authentication
 function connectSpotify() {
-  console.log("🔗 Connecting to Spotify...");
-  
-  // Use Authorization Code (PKCE) via backend
-  fetch("/api/v1/spotify/auth-url")
-    .then(r => r.json())
-    .then(({ authUrl }) => {
-      if (authUrl) {
-        window.location.href = authUrl;
-      } else {
-        throw new Error("No authUrl returned");
-      }
-    })
-    .catch(err => {
-      console.error("❌ Failed to get Spotify auth URL", err);
-      alert("Failed to start Spotify authentication. Please try again.");
-    });
+    console.log("🔗 Connecting to Spotify...");
+    fetch("/api/v1/spotify/auth-url")
+        .then(r => r.json())
+        .then(({ authUrl }) => {
+            if (authUrl) {
+                window.location.href = authUrl;
+            } else {
+                throw new Error("No authUrl returned");
+            }
+        })
+        .catch(err => {
+            console.error("❌ Failed to get Spotify auth URL", err);
+            alert("Failed to start Spotify authentication. Please try again.");
+        });
 }
 
 function checkSpotifyAuth() {
@@ -82,6 +103,7 @@ function checkSpotifyAuth() {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     if (!code) return;
+    
     // Exchange the code at the backend
     fetch('/api/v1/spotify/callback', {
         method: 'POST',
@@ -101,8 +123,6 @@ function checkSpotifyAuth() {
             alert('Failed to authenticate with Spotify. Please try again.');
         });
 }
-    }
-}
 
 function showSpotifyConnected() {
     const authSection = document.getElementById('spotify-auth');
@@ -112,99 +132,109 @@ function showSpotifyConnected() {
     if (authSection && authStatus && loginBtn) {
         loginBtn.style.display = 'none';
         authStatus.classList.remove('hidden');
-        authSection.style.background = 'rgba(29, 185, 84, 0.2)';
+        authStatus.style.display = 'block';
     }
 }
 
-// Initialize Spotify Web Playback SDK
-function initializeSpotifyPlayer() {
-    console.log('🎵 Initializing Spotify Web Playback SDK...');
-    
-    // For demo purposes, simulate Spotify player
-    // In production, use real Spotify token
-    const demoToken = 'demo_spotify_token';
-    
-    if (!window.Spotify) {
-        console.warn('⚠️ Spotify SDK not loaded, using demo mode');
-        isSpotifyReady = true;
+// Spotify Web Playback SDK Integration
+window.onSpotifyWebPlaybackSDKReady = () => {
+    console.log('🎵 Spotify Web Playback SDK Ready');
+    onSpotifyWebPlaybackSDKReady();
+};
+
+function onSpotifyWebPlaybackSDKReady() {
+    if (!spotifyToken) {
+        console.log('⏳ Waiting for Spotify token...');
         return;
     }
     
-    spotifyPlayer = new window.Spotify.Player({
+    console.log('🎵 Initializing Spotify Player...');
+    spotifyPlayer = new Spotify.Player({
         name: 'Vybe Music Player',
-        getOAuthToken: cb => { 
-            cb(spotifyToken || demoToken);
-        },
-        volume: 0.5
+        getOAuthToken: cb => { cb(spotifyToken); },
+        volume: 0.8
+    });
+
+    // Error handling
+    spotifyPlayer.addListener('initialization_error', ({ message }) => {
+        console.error('❌ Spotify initialization error:', message);
+    });
+
+    spotifyPlayer.addListener('authentication_error', ({ message }) => {
+        console.error('❌ Spotify authentication error:', message);
+        alert('Spotify authentication failed. Please reconnect.');
+    });
+
+    spotifyPlayer.addListener('account_error', ({ message }) => {
+        console.error('❌ Spotify account error:', message);
+        alert('Spotify Premium is required for playback.');
+    });
+
+    spotifyPlayer.addListener('playback_error', ({ message }) => {
+        console.error('❌ Spotify playback error:', message);
+    });
+
+    // Playback status updates
+    spotifyPlayer.addListener('player_state_changed', (state) => {
+        if (!state) return;
+        
+        const { paused, track_window: { current_track } } = state;
+        if (current_track) {
+            updatePlayerUI({
+                name: current_track.name,
+                artists: current_track.artists.map(a => a.name),
+                album: current_track.album.name,
+                image: current_track.album.images[0]?.url,
+                id: current_track.id
+            });
+        }
+        updatePlayPauseButton(!paused);
     });
 
     // Ready
     spotifyPlayer.addListener('ready', ({ device_id }) => {
         console.log('✅ Spotify player ready with Device ID', device_id);
         isSpotifyReady = true;
-        spotifyDeviceId = device_id;    });
-
-    // Not Ready
-    spotifyPlayer.addListener('not_ready', ({ device_id }) => {
-        console.log('❌ Device ID has gone offline', device_id);
-        isSpotifyReady = false;
-    });
-
-    // Player state changed
-    spotifyPlayer.addListener('player_state_changed', (state) => {
-        if (!state) return;
-        
-        const { paused, track_window: { current_track } } = state;
-        
-        if (current_track) {
-            updatePlayerUI({
-                name: current_track.name,
-                artists: current_track.artists.map(a => a.name),
-                album: current_track.album.name,
-                image: current_track.album.images[0]?.url
-            });
-        }
-        
-        updatePlayPauseButton(!paused);
+        spotifyDeviceId = device_id;
     });
 
     // Connect to the player
-    spotifyPlayer.connect();
+    spotifyPlayer.connect().then(success => {
+        if (success) {
+            console.log('✅ Successfully connected to Spotify');
+        } else {
+            console.error('❌ Failed to connect to Spotify');
+        }
+    });
 }
 
-// Create Vybe function
+// Create Vybe Function
 async function createVybe() {
     const contextInput = document.getElementById('context-input');
     const createBtn = document.getElementById('create-vybe-btn');
-    const loadingElement = document.getElementById('loading');
     
-    if (!contextInput || !createBtn) {
-        console.error('❌ Required elements not found');
-        return;
-    }
+    if (!contextInput || !createBtn) return;
     
     const context = contextInput.value.trim();
-    
     if (!context) {
-        alert('Please describe your vybe first!');
+        alert('Please enter a context for your vybe!');
         return;
     }
     
-    console.log('🎵 Creating vybe for context:', context);
-    
     // Show loading state
-    showLoading('Creating your vybe...');
     createBtn.disabled = true;
+    createBtn.textContent = 'Creating Vybe...';
     
     try {
         const response = await fetch('/api/v1/vybes', {
             method: 'POST',
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
                 context: context,
-                referenceTrackIds: [] // Could add reference tracks later
+                referenceTrackIds: [] // Context-only mode - no reference tracks needed
             })
         });
         
@@ -214,244 +244,227 @@ async function createVybe() {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         
-        const data = await response.json();
-        console.log('✅ Vybe created successfully:', data);
+        const json = await response.json();
+        console.log('✅ Vybe created successfully:', json);
+        
+        // Unwrap API response data
+        const data = json.data || json;
         
         // Store recommendations
         currentRecommendations = data.recommendations || [];
-        currentVybeId = data.id;        currentTrackIndex = 0;
+        currentVybeId = data.id;
+        currentTrackIndex = 0;
         
         if (currentRecommendations.length > 0) {
             // Show player page
             showPage('player-page');
             
-            // Play first track
-            playTrack(currentRecommendations[0]);
+            // Load first track
+            loadTrack(currentTrackIndex);
         } else {
-            throw new Error('No recommendations received');
+            alert('No recommendations found. Try a different context!');
         }
         
     } catch (error) {
         console.error('❌ Error creating vybe:', error);
         alert('Failed to create vybe. Please try again.');
     } finally {
-        hideLoading();
+        // Reset button
         createBtn.disabled = false;
+        createBtn.textContent = 'Create Vybe';
     }
 }
 
-// Player functions
-function playTrack(track) {
-    console.log('🎵 Playing track:', track.name, 'by', track.artists.join(', '));
+// Player Functions
+function loadTrack(index) {
+    if (!currentRecommendations || index >= currentRecommendations.length) return;
     
-    // Update UI
+    const track = currentRecommendations[index];
     updatePlayerUI(track);
     
-    // Play with Spotify SDK
-    if (isSpotifyReady && spotifyPlayer && track.spotifyUri) {
-        console.log('🎵 Playing via Spotify SDK:', track.spotifyUri);
-        
-        // Use Spotify Web API to play track
+    // Try to play if Spotify is ready
+    if (isSpotifyReady && track.spotifyUri) {
         playSpotifyTrack(track.spotifyUri);
     } else {
-        console.log('🎵 Demo mode - simulating playback');
-        updateAudioStatus('🎵 Playing (Demo Mode - Requires Spotify Premium)');
+        updateAudioStatus('🎵 Track loaded (Spotify Premium required for playback)');
     }
 }
 
 async function playSpotifyTrack(uri) {
     try {
         if (!spotifyToken) {
-            throw new Error("Missing Spotify access token");
+            throw new Error('Missing Spotify access token');
         }
         if (!spotifyDeviceId) {
-            throw new Error("Missing Spotify device ID");
+            throw new Error('Missing Spotify device ID');
         }
+        
         const res = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${encodeURIComponent(spotifyDeviceId)}`, {
-            method: "PUT",
+            method: 'PUT',
             headers: {
-                "Authorization": `Bearer ${spotifyToken}`,
-                "Content-Type": "application/json",
+                'Authorization': `Bearer ${spotifyToken}`,
+                'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ uris: [uri] }),
+            body: JSON.stringify({
+                uris: [uri]
+            })
         });
+        
         if (!res.ok) {
-            const errText = await res.text();
-            throw new Error(`Spotify API error: ${res.status} ${res.statusText} - ${errText}`);
+            const errorText = await res.text();
+            throw new Error(`Spotify API error: ${res.status} - ${errorText}`);
         }
-        updateAudioStatus("🎵 Playing via Spotify");
-        updatePlayPauseButton(true);    } catch (error) {
-        console.error('❌ Error playing Spotify track:', error);
-        updateAudioStatus('❌ Playback failed');
+        
+        updateAudioStatus('🎵 Playing via Spotify');
+        updatePlayPauseButton(true);
+        
+    } catch (error) {
+        console.error('❌ Failed to play Spotify track:', error);
+        updateAudioStatus(`❌ Playback failed: ${error.message}`);
     }
 }
 
-function simulateTrackProgress() {
-    // Demo progress bar animation
+function updatePlayerUI(track) {
+    // Update track info
+    const titleElement = document.getElementById('track-title');
+    const artistElement = document.getElementById('track-artist');
+    const albumElement = document.getElementById('track-album');
+    const imageElement = document.getElementById('album-cover');
+    
+    if (titleElement) titleElement.textContent = track.name || 'Unknown Track';
+    
+    // Handle artists (can be array of objects or strings)
+    const artistNames = Array.isArray(track.artists) 
+        ? track.artists.map(a => (typeof a === 'string' ? a : a?.name)).filter(Boolean)
+        : [];
+    if (artistElement) artistElement.textContent = artistNames.join(', ') || 'Unknown Artist';
+    
+    // Handle album (can be object or string)
+    const albumName = typeof track.album === 'string' ? track.album : (track.album?.name ?? '');
+    if (albumElement) albumElement.textContent = albumName || 'Unknown Album';
+    
+    // Update album cover
+    if (imageElement && track.image) {
+        imageElement.src = track.image;
+        imageElement.alt = `${track.name} album cover`;
+    }
+    
+    // Update progress bar (placeholder)
     const progressBar = document.getElementById('progress');
     if (progressBar) {
-        let progress = 0;
-        const interval = setInterval(() => {
-            progress += 1;
-            progressBar.style.width = progress + '%';
-            
-            if (progress >= 100) {
-                clearInterval(interval);
-                nextTrack();
-            }
-        }, 1000); // 100 seconds demo track
+        progressBar.style.width = '0%';
     }
 }
 
+function updatePlayPauseButton(isPlaying) {
+    const playPauseBtn = document.getElementById('play-pause');
+    if (playPauseBtn) {
+        playPauseBtn.textContent = isPlaying ? '⏸️' : '▶️';
+    }
+}
+
+function updateAudioStatus(status) {
+    const statusElement = document.getElementById('audio-status');
+    if (statusElement) {
+        statusElement.textContent = status;
+    }
+}
+
+// Player Control Functions
 function togglePlayPause() {
-    if (isSpotifyReady && spotifyPlayer) {
+    if (spotifyPlayer) {
         spotifyPlayer.togglePlay().then(() => {
             console.log('🎵 Toggled playback');
         });
-    } else {
-        console.log('🎵 Demo toggle play/pause');
-        updateAudioStatus('⏸️ Paused (Demo Mode)');
     }
 }
 
 function previousTrack() {
     if (currentTrackIndex > 0) {
         currentTrackIndex--;
-        playTrack(currentRecommendations[currentTrackIndex]);
+        loadTrack(currentTrackIndex);
     }
 }
 
 function nextTrack() {
     if (currentTrackIndex < currentRecommendations.length - 1) {
         currentTrackIndex++;
-        playTrack(currentRecommendations[currentTrackIndex]);
+        loadTrack(currentTrackIndex);
     }
 }
 
+// Feedback Functions
 function likeTrack() {
     const track = currentRecommendations[currentTrackIndex];
-    if (track) {
-        console.log('👍 Liked track:', track.name);
-        updateAudioStatus('👍 Track liked!');
-        
-        // Send feedback to backend
+    if (track && currentVybeId) {
         sendTrackFeedback(currentVybeId, track.id, "upvote");
+        console.log('👍 Track liked');
     }
 }
 
 function dislikeTrack() {
     const track = currentRecommendations[currentTrackIndex];
-    if (track) {
-        console.log('👎 Disliked track:', track.name);
-        updateAudioStatus('👎 Track disliked');
-        
-        // Send feedback and skip to next
+    if (track && currentVybeId) {
         sendTrackFeedback(currentVybeId, track.id, "downvote");
+        console.log('👎 Track disliked');
+        
+        // Auto-skip to next track
         nextTrack();
     }
 }
 
 async function sendTrackFeedback(vybeId, trackId, feedbackType) {
-  try {
-    const response = await fetch(`/api/v1/vybes/${vybeId}/feedback`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${spotifyToken || "demo-token"}`,
-      },
-      body: JSON.stringify({ trackId, feedbackType })
-    });
-    if (response.ok) {
-      console.log('✅ Feedback sent successfully');
-    } else {
-      console.warn('⚠️ Feedback request failed', response.status, await response.text());
-    }
-  } catch (error) {
-    console.error('❌ Error sending feedback:', error);
-  }
-}
+    try {
+        const response = await fetch(`/api/v1/vybes/${vybeId}/feedback`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${spotifyToken || "demo-token"}`,
+            },
+            body: JSON.stringify({
+                trackId: trackId,
+                feedbackType: feedbackType
+            })
+        });
 
-// UI Update functions
-function updatePlayerUI(track) {
-    const titleElement = document.getElementById('track-title');
-    const artistElement = document.getElementById('track-artist');
-    const albumElement = document.getElementById('track-album');
-    const albumCover = document.getElementById('album-cover');
-    
-    if (titleElement) titleElement.textContent = track.name;
-    const artistNames = Array.isArray(track.artists)
-      ? track.artists.map(a => (typeof a === 'string' ? a : a?.name)).filter(Boolean)
-      : [];
-    if (artistElement) artistElement.textContent = artistNames.join(', ');
-    const albumName = typeof track.album === 'string' ? track.album : (track.album?.name ?? '');
-    if (albumElement) albumElement.textContent = albumName;
-    
-    if (albumCover && track.image) {
-        albumCover.src = track.image;
-    }
-    
-    // Update track counter
-    const trackCounter = document.getElementById('track-counter');
-    if (trackCounter) {
-        trackCounter.textContent = `${currentTrackIndex + 1} of ${currentRecommendations.length}`;
-    }
-}
-
-function updatePlayPauseButton(isPlaying) {
-    const playPauseBtn = document.getElementById('play-pause-btn');
-    if (playPauseBtn) {
-        playPauseBtn.textContent = isPlaying ? '⏸️' : '▶️';
-    }
-}
-
-function updateAudioStatus(message) {
-    const audioStatus = document.getElementById('audio-status');
-    if (audioStatus) {
-        audioStatus.textContent = message;
-    }
-}
-
-function updateCharacterCount() {
-    const input = document.getElementById('context-input');
-    const counter = document.getElementById('char-count');
-    
-    if (input && counter) {
-        const currentLength = input.value.length;
-        const maxLength = parseInt(input.getAttribute('maxlength') || '500', 10);
-        counter.textContent = `${currentLength}/${maxLength}`;
-        
-        if (currentLength > maxLength * 0.9) {
-            counter.style.color = '#ff6b6b';
-        } else {
-            counter.style.color = 'rgba(255,255,255,0.7)';
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
         }
+
+        const data = await response.json();
+        console.log(`✅ Feedback sent: ${feedbackType}`, data);
+    } catch (error) {
+        console.error(`❌ Failed to send ${feedbackType} feedback:`, error);
     }
 }
 
-// Utility functions
+// Utility Functions
 function showPage(pageId) {
+    // Hide all pages
     const pages = document.querySelectorAll('.page');
     pages.forEach(page => page.classList.remove('active'));
     
+    // Show target page
     const targetPage = document.getElementById(pageId);
     if (targetPage) {
         targetPage.classList.add('active');
     }
 }
 
-function showLoading(message = 'Loading...') {
-    const loadingElement = document.getElementById('loading');
-    if (loadingElement) {
-        loadingElement.textContent = message;
-        loadingElement.style.display = 'block';
+function updateCharacterCount() {
+    const contextInput = document.getElementById('context-input');
+    const charCount = document.getElementById('char-count');
+    
+    if (contextInput && charCount) {
+        const count = contextInput.value.length;
+        charCount.textContent = `${count}/200`;
+        
+        if (count > 200) {
+            charCount.style.color = '#ff4444';
+        } else {
+            charCount.style.color = '#888';
+        }
     }
 }
 
-function hideLoading() {
-    const loadingElement = document.getElementById('loading');
-    if (loadingElement) {
-        loadingElement.style.display = 'none';
-    }
-}
-
-console.log('✅ Vybe app JavaScript loaded successfully');
+console.log('✅ Vybe app loaded successfully');
