@@ -13,7 +13,7 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https:"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://sdk.scdn.co"],
       scriptSrcAttr: ["'unsafe-inline'"], // Allow inline event handlers
       imgSrc: ["'self'", "data:", "https:", "http:"], // Allow external images
       connectSrc: ["'self'", "https:", "wss:", "*.spotify.com", "*.spotifycdn.com"], // Allow Spotify APIs and WebSocket
@@ -152,6 +152,11 @@ async function generateMusicRecommendationsWithSpotify(context: string, referenc
       return {
         ...track,
         id: spotifyId,
+        // normalize types for the frontend
+        artists: Array.isArray(track.artists)
+          ? track.artists.map((a: any) => (typeof a === 'string' ? a : a?.name)).filter(Boolean)
+          : [],
+        album: typeof track.album === 'string' ? track.album : (track.album?.name ?? ''),
         spotifyUri: `spotify:track:${spotifyId}`,
         canPlay: true,
         requiresPremium: true,

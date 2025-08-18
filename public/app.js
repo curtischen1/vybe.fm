@@ -58,22 +58,25 @@ function setupEventListeners() {
 }
 
 // Spotify Authentication
-    console.log("🔗 Connecting to Spotify...");
-    
-    // Use Authorization Code (PKCE) via backend
-    fetch("/api/v1/spotify/auth-url")
-        .then(r => r.json())
-        .then(({ data }) => {
-            if (data?.authUrl) {
-                window.location.href = data.authUrl;
-            } else {
-                throw new Error("No authUrl returned");
-            }
-        })
-        .catch(err => {
-            console.error("❌ Failed to get Spotify auth URL", err);
-            alert("Failed to start Spotify authentication. Please try again.");
-        });
+function connectSpotify() {
+  console.log("🔗 Connecting to Spotify...");
+  
+  // Use Authorization Code (PKCE) via backend
+  fetch("/api/v1/spotify/auth-url")
+    .then(r => r.json())
+    .then(({ authUrl }) => {
+      if (authUrl) {
+        window.location.href = authUrl;
+      } else {
+        throw new Error("No authUrl returned");
+      }
+    })
+    .catch(err => {
+      console.error("❌ Failed to get Spotify auth URL", err);
+      alert("Failed to start Spotify authentication. Please try again.");
+    });
+}
+
 function checkSpotifyAuth() {
     // Check URL hash for Spotify access token
     const hash = window.location.hash;
@@ -335,24 +338,24 @@ function dislikeTrack() {
     }
 }
 
-async function sendTrackFeedback(vybeId, trackId, feedbackType) {    try {
-        const response = await fetch('/api/v1/vybes/feedback', {
-        const response = await fetch(`/api/v1/vybes/${vybeId}/feedback`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${spotifyToken || "demo-token"}`,
-            },
-            body: JSON.stringify({
-                trackId,
-                feedbackType
-            })
-        });        if (response.ok) {
-            console.log('✅ Feedback sent successfully');
-        }
-    } catch (error) {
-        console.error('❌ Error sending feedback:', error);
+async function sendTrackFeedback(vybeId, trackId, feedbackType) {
+  try {
+    const response = await fetch(`/api/v1/vybes/${vybeId}/feedback`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${spotifyToken || "demo-token"}`,
+      },
+      body: JSON.stringify({ trackId, feedbackType })
+    });
+    if (response.ok) {
+      console.log('✅ Feedback sent successfully');
+    } else {
+      console.warn('⚠️ Feedback request failed', response.status, await response.text());
     }
+  } catch (error) {
+    console.error('❌ Error sending feedback:', error);
+  }
 }
 
 // UI Update functions
@@ -363,8 +366,12 @@ function updatePlayerUI(track) {
     const albumCover = document.getElementById('album-cover');
     
     if (titleElement) titleElement.textContent = track.name;
-    if (artistElement) artistElement.textContent = track.artists.join(', ');
-    if (albumElement) albumElement.textContent = track.album;
+    const artistNames = Array.isArray(track.artists)
+      ? track.artists.map(a => (typeof a === 'string' ? a : a?.name)).filter(Boolean)
+      : [];
+    if (artistElement) artistElement.textContent = artistNames.join(', ');
+    const albumName = typeof track.album === 'string' ? track.album : (track.album?.name ?? '');
+    if (albumElement) albumElement.textContent = albumName;
     
     if (albumCover && track.image) {
         albumCover.src = track.image;
