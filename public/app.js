@@ -78,16 +78,29 @@ function connectSpotify() {
 }
 
 function checkSpotifyAuth() {
-    // Check URL hash for Spotify access token
-    const hash = window.location.hash;
-    if (hash.includes('access_token')) {
-        const token = hash.match(/access_token=([^&]*)/);
-        if (token) {
-            spotifyToken = token[1];
+    // Check query string for authorization code
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (!code) return;
+    // Exchange the code at the backend
+    fetch('/api/v1/spotify/callback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+    })
+        .then(r => r.ok ? r.json() : r.text().then(t => { throw new Error(t || `HTTP ${r.status}`); }))
+        .then(({ accessToken }) => {
+            if (!accessToken) throw new Error('No accessToken returned');
+            spotifyToken = accessToken;
             showSpotifyConnected();
-            // Clean up URL
-            window.location.hash = '';
-        }
+            // Clean up query string
+            window.history.replaceState({}, document.title, window.location.pathname);
+        })
+        .catch(err => {
+            console.error('❌ Spotify code exchange failed', err);
+            alert('Failed to authenticate with Spotify. Please try again.');
+        });
+}
     }
 }
 
