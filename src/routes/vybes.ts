@@ -35,11 +35,12 @@ router.post('/',
       });
     }
 
-    if (!referenceTrackIds || !Array.isArray(referenceTrackIds) || referenceTrackIds.length === 0) {
+    // Allow empty reference tracks for context-only recommendations
+    if (!Array.isArray(referenceTrackIds)) {
       return res.status(400).json({
         success: false,
-        error: 'At least one reference track is required',
-        code: 'MISSING_REFERENCE_TRACKS',
+        error: 'referenceTrackIds must be an array',
+        code: 'INVALID_REFERENCE_TRACKS',
         timestamp: new Date().toISOString(),
       });
     }
