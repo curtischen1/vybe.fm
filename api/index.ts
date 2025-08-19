@@ -367,6 +367,11 @@ app.get('/api/v1/config', (req, res) => {
   });
 });
 
+// Spotify OAuth callback route - serve the main app
+app.get('/auth/spotify/callback', (req, res) => {
+  res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
+});
+
 // Catch-all handler: send back the index.html file for client-side routing
 app.get('*', (req, res) => {
   // Skip API routes
