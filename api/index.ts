@@ -62,7 +62,13 @@ app.get('/', (req, res) => {
 // Spotify Auth URL endpoint
 app.get('/api/v1/spotify/auth-url', (req, res) => {
   const clientId = process.env.SPOTIFY_CLIENT_ID;
-  const redirectUri = process.env.SPOTIFY_REDIRECT_URI || 'http://localhost:3000/auth/spotify/callback';
+  
+  // Auto-detect redirect URI based on environment
+  const baseUrl = req.get('host')?.includes('vercel.app') 
+    ? `https://${req.get('host')}`
+    : 'http://localhost:3000';
+  
+  const redirectUri = (process.env.SPOTIFY_REDIRECT_URI || `${baseUrl}/auth/spotify/callback`).trim();
   
   if (!clientId) {
     return res.status(500).json({ 
@@ -105,7 +111,13 @@ app.post('/api/v1/spotify/callback', async (req, res) => {
 
     const clientId = process.env.SPOTIFY_CLIENT_ID;
     const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
-    const redirectUri = process.env.SPOTIFY_REDIRECT_URI || 'http://localhost:3000/auth/spotify/callback';
+    
+    // Auto-detect redirect URI based on environment  
+    const baseUrl = req.get('host')?.includes('vercel.app') 
+      ? `https://${req.get('host')}`
+      : 'http://localhost:3000';
+    
+    const redirectUri = (process.env.SPOTIFY_REDIRECT_URI || `${baseUrl}/auth/spotify/callback`).trim();
 
     if (!clientId || !clientSecret) {
       return res.status(500).json({ 
