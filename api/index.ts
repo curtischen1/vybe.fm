@@ -7,9 +7,19 @@ import path from 'path';
 
 const app = express();
 
-// Security middleware - temporarily disable CSP for Spotify SDK testing
+// Security middleware - CSP configured for Spotify Web Playback SDK
 app.use(helmet({
-  contentSecurityPolicy: false // Temporarily disabled to fix Spotify SDK iframe issues
+  contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://sdk.scdn.co", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "https:", "data:"],
+      connectSrc: ["'self'", "https://api.spotify.com", "https://accounts.spotify.com", "wss://*.spotify.com"],
+      frameSrc: ["'self'", "https://open.spotify.com"],
+      mediaSrc: ["'self'", "https:", "data:", "blob:"]
+    }
+  } : false
 }));
 app.use(cors());
 app.use(compression());
@@ -71,7 +81,10 @@ app.get('/api/v1/spotify/auth-url', (req, res) => {
     'user-read-email',
     'playlist-modify-public',
     'playlist-modify-private',
-    'user-library-read'
+    'user-library-read',
+    'streaming',
+    'user-read-playback-state',
+    'user-modify-playback-state'
   ].join(' ');
 
   const authUrl = `https://accounts.spotify.com/authorize?` +
