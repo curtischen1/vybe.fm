@@ -333,32 +333,9 @@ async function generateMusicRecommendations(context: string, referenceTrackIds: 
 
 // Generate preview URLs for known tracks (in real app, this comes from Spotify API)
 function generatePreviewUrl(trackName: string, artistName: string): string | null {
-  // NOTE: As of November 2024, Spotify deprecated the preview_url field!
-  // For demo purposes, we'll use reliable test audio files
-  // In production, you'd need to use Spotify's Web Playback SDK (requires Premium)
-  
-  const workingAudioUrls = [
-    // Using Internet Archive's reliable audio files
-    'https://archive.org/download/testmp3testfile/mpthreetest.mp3',
-    'https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3',
-    'https://codeskulptor-demos.commondatastorage.googleapis.com/descent/background%20music.mp3',
-    'https://codeskulptor-demos.commondatastorage.googleapis.com/pang/paza-moduless.mp3'
-  ];
-  
-  // Use a simple hash to consistently assign the same URL to the same track
-  const trackHash = (trackName + artistName).split('').reduce((a, b) => {
-    a = ((a << 5) - a) + b.charCodeAt(0);
-    return a & a;
-  }, 0);
-  
-  const urlIndex = Math.abs(trackHash) % workingAudioUrls.length;
-  
-  // 70% chance of having a preview URL (realistic - not all tracks have previews)
-  if (Math.abs(trackHash) % 10 < 7) {
-    return workingAudioUrls[urlIndex];
-  }
-  
-  return null; // No preview available
+  // Force Spotify Web Playback SDK usage instead of external preview URLs
+  // This prevents CORS issues and ensures proper Spotify integration
+  return null;
 }
 
 
