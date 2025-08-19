@@ -115,6 +115,10 @@ function checkSpotifyAuth() {
             if (!accessToken) throw new Error('No accessToken returned');
             spotifyToken = accessToken;
             showSpotifyConnected();
+            // Initialize the player now that we have a token
+            if (window.Spotify && !spotifyPlayer) {
+                onSpotifyWebPlaybackSDKReady();
+            }
             // Clean up query string
             window.history.replaceState({}, document.title, window.location.pathname);
         })
