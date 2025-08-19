@@ -166,7 +166,7 @@ function initializeSpotifyPlayer() {
 
     spotifyPlayer.addListener('authentication_error', ({ message }) => {
         console.error('❌ Spotify authentication error:', message);
-        alert('Spotify authentication failed. Please reconnect.');
+        alert('Spotify authentication failed. This may be due to missing permissions. Please reconnect and grant all requested permissions.');
     });
 
     spotifyPlayer.addListener('account_error', ({ message }) => {
