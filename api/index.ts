@@ -47,6 +47,9 @@ app.get('/', (req, res) => {
     message: '🎵 Vybe API is running!',
     status: 'online',
     environment: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0',
+    deployment: 'vercel',
     endpoints: {
       health: '/health',
       spotify: '/api/v1/spotify',

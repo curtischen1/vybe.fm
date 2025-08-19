@@ -128,5 +128,16 @@ This project uses [CodeRabbit](https://coderabbit.ai) for AI-powered code review
 ---
 
 **Built with ❤️ for music lovers who want truly personal discovery**
-# Force redeploy
-# Trigger Vercel redeploy - Mon Aug 18 18:28:49 MST 2025
+# Deployment Status
+
+🚀 **Live Application**: [Vybe Music Discovery](https://vybe-fm.vercel.app)
+
+## Quick Start
+1. Visit the live app above
+2. Connect your Spotify account
+3. Describe your musical vybe context
+4. Get personalized recommendations!
+
+# Deployment Notes
+- Auto-deploys from main branch via Vercel
+- Last updated: Aug 19, 2025

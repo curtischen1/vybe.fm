@@ -177,3 +177,4 @@ temp/
 # API Keys and secrets (should be in .env but extra safety)
 **/config/keys.js
 **/config/prod.js
+.vercel
