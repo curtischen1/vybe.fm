@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize Spotify if SDK is ready
     if (window.Spotify) {
         console.log('🎵 Spotify SDK already loaded');
-        onSpotifyWebPlaybackSDKReady();
+        initializeSpotifyPlayer();
     }
 });
 
@@ -41,17 +41,17 @@ function setupEventListeners() {
     }
     
     // Player controls
-    const playPauseBtn = document.getElementById('play-pause');
+    const playPauseBtn = document.getElementById('play-pause-btn');
     if (playPauseBtn) {
         playPauseBtn.addEventListener('click', togglePlayPause);
     }
     
-    const prevBtn = document.getElementById('prev-track');
+    const prevBtn = document.getElementById('prev-btn');
     if (prevBtn) {
         prevBtn.addEventListener('click', previousTrack);
     }
     
-    const nextBtn = document.getElementById('next-track');
+    const nextBtn = document.getElementById('next-btn');
     if (nextBtn) {
         nextBtn.addEventListener('click', nextTrack);
     }
@@ -68,7 +68,7 @@ function setupEventListeners() {
     }
     
     // Back to create button
-    const backBtn = document.getElementById('back-to-create');
+    const backBtn = document.getElementById('back-btn');
     if (backBtn) {
         backBtn.addEventListener('click', () => showPage('create-vybe-page'));
     }
@@ -361,7 +361,7 @@ function updatePlayerUI(track) {
 }
 
 function updatePlayPauseButton(isPlaying) {
-    const playPauseBtn = document.getElementById('play-pause');
+    const playPauseBtn = document.getElementById('play-pause-btn');
     if (playPauseBtn) {
         playPauseBtn.textContent = isPlaying ? '⏸️' : '▶️';
     }

@@ -7,20 +7,9 @@ import path from 'path';
 
 const app = express();
 
-// Security middleware with relaxed CSP for frontend
+// Security middleware - temporarily disable CSP for Spotify SDK testing
 app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https:"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://sdk.scdn.co"],
-      scriptSrcAttr: ["'unsafe-inline'"], // Allow inline event handlers
-      imgSrc: ["'self'", "data:", "https:", "http:"], // Allow external images
-      connectSrc: ["'self'", "https:", "wss:", "*.spotify.com", "*.spotifycdn.com"], // Allow Spotify APIs and WebSocket
-      mediaSrc: ["'self'", "https:", "http:", "data:", "*.spotify.com", "*.spotifycdn.com"], // Allow Spotify audio streaming
-      frameSrc: ["'self'", "https://sdk.scdn.co"] // Allow Spotify SDK iframe
-    }
-  }
+  contentSecurityPolicy: false // Temporarily disabled to fix Spotify SDK iframe issues
 }));
 app.use(cors());
 app.use(compression());
@@ -365,6 +354,11 @@ app.get('/api/v1/config', (req, res) => {
     hasDatabaseConfig: !!process.env.DATABASE_URL,
     timestamp: new Date().toISOString()
   });
+});
+
+// Spotify OAuth callback route - serve the main app
+app.get('/auth/spotify/callback', (req, res) => {
+  res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
 });
 
 // Catch-all handler: send back the index.html file for client-side routing
