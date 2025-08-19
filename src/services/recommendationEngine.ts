@@ -1,10 +1,10 @@
 import { spotifyService } from '@/services/spotify';
 import { contextProcessor } from '@/services/contextProcessor';
 import { musicAnalysisService } from '@/services/musicAnalysis';
-import { youtubeMusicService } from '@/services/youtubeMusic';
+
 import { db } from '@/services/database';
 import { ContextWeights, TrackRecommendation, SpotifyAudioFeatures } from '@/types/api';
-import { logPerformance, logRecommendation, logError, logInfo } from '@/utils/logger';
+import { logPerformance, logRecommendation, logError } from '@/utils/logger';
 
 // Recommendation engine types
 export interface RecommendationRequest {
@@ -106,8 +106,8 @@ class RecommendationEngineService {
         limit
       );
 
-      // Step 9: Add YouTube stream URLs to recommendations
-      const recommendationsWithStreams = await this.addYouTubeStreams(diversifiedRecommendations);
+      // Step 9: Use Spotify track URIs for Web Playback SDK
+      const recommendationsWithStreams = diversifiedRecommendations;
 
       // Step 10: Create Vybe record in database
       const processingTime = Date.now() - startTime;
@@ -318,6 +318,7 @@ class RecommendationEngineService {
           album: track.album.name,
           previewUrl: track.preview_url || null,
           spotifyUrl: track.external_urls.spotify,
+          spotifyUri: `spotify:track:${trackId}`,
           audioFeatures: features,
           confidence: finalScore,
           reasoning: this.generateTrackReasoning(similarity, personalPreference, features),
@@ -532,66 +533,7 @@ class RecommendationEngineService {
     }
   }
 
-  /**
-   * Add YouTube streaming URLs to track recommendations
-   * This enables actual audio playback for the Spotify killer strategy
-   */
-  private async addYouTubeStreams(recommendations: TrackRecommendation[]): Promise<TrackRecommendation[]> {
-    logInfo(`🎵 Adding YouTube streams to ${recommendations.length} recommendations`);
-    
-    const startTime = Date.now();
-    const recommendationsWithStreams: TrackRecommendation[] = [];
 
-    for (const track of recommendations) {
-      try {
-        // Extract artist and track name for YouTube search
-        const artist = track.artists.join(' ');
-        const title = track.name;
-
-        // Find YouTube stream URL
-        const youtubeTrack = await youtubeMusicService.findTrack(artist, title);
-
-        if (youtubeTrack && youtubeTrack.streamUrl) {
-          recommendationsWithStreams.push({
-            ...track,
-            youtubeId: youtubeTrack.videoId,
-            streamUrl: youtubeTrack.streamUrl,
-          });
-          
-          logInfo(`✅ Found YouTube stream for: ${artist} - ${title}`);
-        } else {
-          // Keep original track without stream URL
-          recommendationsWithStreams.push(track);
-          logInfo(`❌ No YouTube stream found for: ${artist} - ${title}`);
-        }
-
-        // Small delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 200));
-
-      } catch (error) {
-        logError('Failed to get YouTube stream', error as Error, {
-          trackId: track.trackId,
-          artist: track.artists.join(' '),
-          title: track.name
-        });
-        
-        // Keep original track without stream URL
-        recommendationsWithStreams.push(track);
-      }
-    }
-
-    const total = recommendations.length || 1;
-    const successful = recommendationsWithStreams.filter(t => t.streamUrl).length;
-    const successRate = successful / total;
-    
-    logPerformance('youtube_stream_enrichment', startTime, {
-      totalTracks: recommendations.length,
-      successfulStreams: successful,
-      successRate: (successRate * 100).toFixed(1) + '%'
-    });
-
-    return recommendationsWithStreams;
-  }
 }
 
 // Export singleton instance

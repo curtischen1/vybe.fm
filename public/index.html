@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vybe - AI Music Discovery</title>
     <link rel="stylesheet" href="styles.css">
+    <!-- Spotify Web Playback SDK -->
+    <script src="https://sdk.scdn.co/spotify-player.js"></script>
 </head>
 <body>
     <div class="app">
@@ -16,6 +18,16 @@
                     <p>AI-powered music discovery</p>
                 </div>
                 
+                <!-- Spotify Authentication -->
+                <div id="spotify-auth" class="auth-section">
+                    <h2>🎵 Connect Spotify Premium</h2>
+                    <p>To play full tracks, you need Spotify Premium</p>
+                    <button id="spotify-login-btn" class="btn primary">Connect Spotify</button>
+                    <div id="auth-status" class="auth-status hidden">
+                        <span id="auth-message">✅ Connected to Spotify</span>
+                    </div>
+                </div>
+
                 <div class="vybe-form">
                     <h2>What's the vybe?</h2>
                     
