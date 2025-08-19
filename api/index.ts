@@ -9,18 +9,18 @@ const app = express();
 
 // Security middleware with relaxed CSP for frontend
 app.use(helmet({
-      contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https:"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "https://sdk.scdn.co"],
-        scriptSrcAttr: ["'unsafe-inline'"], // Allow inline event handlers
-        imgSrc: ["'self'", "data:", "https:", "http:"], // Allow external images
-        connectSrc: ["'self'", "https:", "wss:", "*.spotify.com", "*.spotifycdn.com"], // Allow Spotify APIs and WebSocket
-        mediaSrc: ["'self'", "https:", "http:", "data:", "*.spotify.com", "*.spotifycdn.com"], // Allow Spotify audio streaming
-        frameSrc: ["'self'", "https://sdk.scdn.co"] // Allow Spotify SDK iframe
-      }
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https:"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://sdk.scdn.co"],
+      scriptSrcAttr: ["'unsafe-inline'"], // Allow inline event handlers
+      imgSrc: ["'self'", "data:", "https:", "http:"], // Allow external images
+      connectSrc: ["'self'", "https:", "wss:", "*.spotify.com", "*.spotifycdn.com"], // Allow Spotify APIs and WebSocket
+      mediaSrc: ["'self'", "https:", "http:", "data:", "*.spotify.com", "*.spotifycdn.com"], // Allow Spotify audio streaming
+      frameSrc: ["'self'", "https://sdk.scdn.co"] // Allow Spotify SDK iframe
     }
+  }
 }));
 app.use(cors());
 app.use(compression());
