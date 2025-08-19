@@ -115,6 +115,10 @@ function checkSpotifyAuth() {
             if (!accessToken) throw new Error('No accessToken returned');
             spotifyToken = accessToken;
             showSpotifyConnected();
+            // Initialize the player now that we have a token
+            if (window.Spotify && !spotifyPlayer) {
+                initializeSpotifyPlayer();
+            }
             // Clean up query string
             window.history.replaceState({}, document.title, window.location.pathname);
         })
@@ -139,10 +143,10 @@ function showSpotifyConnected() {
 // Spotify Web Playback SDK Integration
 window.onSpotifyWebPlaybackSDKReady = () => {
     console.log('🎵 Spotify Web Playback SDK Ready');
-    onSpotifyWebPlaybackSDKReady();
+    initializeSpotifyPlayer();
 };
 
-function onSpotifyWebPlaybackSDKReady() {
+function initializeSpotifyPlayer() {
     if (!spotifyToken) {
         console.log('⏳ Waiting for Spotify token...');
         return;
